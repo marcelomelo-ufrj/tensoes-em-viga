@@ -1,0 +1,1156 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tensões em Vigas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: prancheta técnica. Barra lateral de modelo à esquerda, bancada de resultados à direita, tudo amarrado pela posição do corte x. */
+:root{
+  --paper:#eef1f0; --panel:#fbfcfc; --ink:#17232b; --muted:#5a6a72; --line:#cdd6d5; --line-soft:#e2e8e7;
+  --cut:#e0761c; --cut-soft:rgba(224,118,28,.14);
+  --ten:#c43a24; --comp:#2b62ae; --mapmid:#f3f5f4;
+  --tauV:#7a4cc2; --tauT:#0f8a7c; --vm:#8a5a12;
+  --steel:#8ea0a8; --react:#3f7d3a;
+  --mdiag:#33434e; --defl:#0e7088; --tauN:#1d8a52;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#11181c; --panel:#182227; --ink:#e3eaec; --muted:#93a4ab; --line:#2c3a40; --line-soft:#223035;
+  --cut:#f08a32; --cut-soft:rgba(240,138,50,.16);
+  --ten:#ef6a50; --comp:#5b95e6; --mapmid:#1d282d;
+  --tauV:#a685ea; --tauT:#36c2b0; --vm:#e0a64a;
+  --steel:#5d727b; --react:#7cc072; --mdiag:#c7d3d8; --defl:#4cc3dd; --tauN:#56c98a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#11181c; --panel:#182227; --ink:#e3eaec; --muted:#93a4ab; --line:#2c3a40; --line-soft:#223035;
+  --cut:#f08a32; --cut-soft:rgba(240,138,50,.16);
+  --ten:#ef6a50; --comp:#5b95e6; --mapmid:#1d282d;
+  --tauV:#a685ea; --tauT:#36c2b0; --vm:#e0a64a;
+  --steel:#5d727b; --react:#7cc072; --mdiag:#c7d3d8; --defl:#4cc3dd; --tauN:#56c98a; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--paper);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.45;padding-inline:16px;padding-block:0 32px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+.top{max-width:1640px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 24px;padding-block:18px 14px;border-bottom:1.5px solid var(--ink)}
+.top h1{font-size:34px;letter-spacing:.01em;line-height:1}
+.top h1 span{color:var(--cut)}
+.top p{margin:0;color:var(--muted);max-width:70ch;flex:1 1 320px}
+.top .preset{display:flex;gap:8px;align-items:center}
+.app{max-width:1640px;margin:16px auto 0;display:grid;grid-template-columns:340px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:980px){.app{grid-template-columns:minmax(0,1fr)}}
+aside{display:grid;gap:12px;min-width:0}
+@media (min-width:981px){aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:4px}}
+main{display:grid;gap:16px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;min-width:0}
+.card>header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-bottom:10px}
+.card h2{font-size:19px;text-transform:uppercase;letter-spacing:.06em}
+.card h2 small{font-family:var(--f-mono);font-size:13px;text-transform:none;letter-spacing:0;color:var(--cut);font-weight:500;margin-left:6px}
+.lbl{font-family:var(--f-display);font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.field{display:grid;gap:3px;min-width:0}
+.field span{font-size:12.5px;color:var(--muted)}
+input[type=number],select{font:inherit;font-family:var(--f-mono);font-size:13.5px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:5px 7px;width:100%;min-width:0}
+select{font-family:var(--f-body);font-size:14px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--cut);outline-offset:1px}
+button{font:inherit;font-size:13.5px;font-weight:500;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:5px 10px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--ink)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;color:var(--muted);cursor:pointer}
+.chk input{accent-color:var(--cut)}
+.load{border:1px solid var(--line-soft);border-left:3px solid var(--line);border-radius:4px;padding:8px;display:grid;gap:6px;background:var(--paper)}
+.load[data-t=P],.load[data-t=q]{border-left-color:var(--ink)}
+.load[data-t=C]{border-left-color:var(--mdiag)}
+.load[data-t=T],.load[data-t=t]{border-left-color:var(--tauT)}
+.load.off{opacity:.45}
+.load .hd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.load .hd b{font-family:var(--f-display);font-size:15px;font-weight:600;letter-spacing:.02em}
+.load .x{padding:0 7px;line-height:1.4;font-size:16px}
+.loads{display:grid;gap:8px}
+.adds{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.adds button{font-size:12.5px;padding:4px 8px}
+.note{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.warn{font-size:12.5px;color:var(--ten);margin:6px 0 0}
+.props{font-family:var(--f-mono);font-size:12.5px;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
+.props dt{color:var(--muted)} .props dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.conv{font-size:12.5px;color:var(--muted);display:grid;gap:4px}
+.conv b{color:var(--ink);font-weight:600}
+.view3d{position:relative}
+#c3d{width:100%;height:380px;display:block;touch-action:none;cursor:grab;border-radius:4px;background:linear-gradient(var(--panel),var(--paper))}
+#c3d:active{cursor:grabbing}
+.cutbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:10px}
+.cutbar input[type=range]{flex:1 1 220px;accent-color:var(--cut);min-width:0}
+.cutbar .xval{font-family:var(--f-mono);font-size:15px;color:var(--cut);font-weight:500;min-width:96px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--f-mono);font-size:13px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--paper);font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip i{font-style:normal;font-family:var(--f-display);font-weight:600;font-size:14px;margin-right:4px}
+.chip.v i{color:var(--tauV)} .chip.d i{color:var(--defl)} .chip.m i{color:var(--mdiag)} .chip.t i{color:var(--tauT)}
+@media (max-width:700px){.hint{display:none}}
+.hint{position:absolute;right:24px;top:62px;font-size:12px;color:var(--muted);pointer-events:none}
+#diagrams{touch-action:pan-y;cursor:ew-resize;overflow:hidden}
+#diagrams svg{display:block;width:100%}
+#diagrams text{font-family:var(--f-mono);font-size:11.5px;fill:var(--muted)}
+#diagrams .ttl{font-family:var(--f-display);font-size:14px;font-weight:600;fill:var(--ink);letter-spacing:.04em}
+.row3{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px}
+@media (max-width:1250px){.row3{grid-template-columns:minmax(0,1fr)}}
+.secwrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+@media (max-width:620px){.secwrap{grid-template-columns:minmax(0,1fr)}}
+#csec{width:100%;aspect-ratio:1/1;max-height:400px;display:block;cursor:crosshair;touch-action:none}
+.cbar{display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11.5px;color:var(--muted);margin-top:6px}
+.cbar canvas{flex:1;height:10px;border-radius:2px;min-width:0}
+#profiles svg{display:block;width:100%}
+#profiles text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+#profiles .ttl{font-family:var(--f-display);font-size:13.5px;font-weight:600;fill:var(--ink)}
+.form{font-family:var(--f-mono);font-size:13px;display:grid;gap:5px;font-variant-numeric:tabular-nums}
+.form .r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:3px 0;border-bottom:1px dotted var(--line)}
+.form .r span:first-child{color:var(--muted);overflow-wrap:anywhere}
+.form .r b{font-weight:500}
+.form .r.k b{color:var(--ink);font-weight:600}
+.sig{color:var(--ten)} .sigc{color:var(--comp)} .tv{color:var(--tauV)} .tt{color:var(--tauT)} .vmc{color:var(--vm)}
+.mohrwrap{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-top:12px;justify-items:center}
+.mohrwrap svg{width:100%;display:block}
+#element{max-width:380px}
+#mohr{max-width:460px}
+.mohrwrap text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+.mohrwrap .ttl{font-family:var(--f-display);font-size:13.5px;font-weight:600;fill:var(--ink)}
+details.help{font-size:13.5px}
+details.help summary{cursor:pointer;font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:15px}
+details.help ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px;color:var(--muted)}
+details.help b{color:var(--ink)}
+
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.tabs button{font-family:var(--f-display);font-size:16px;font-weight:600;letter-spacing:.04em;padding:7px 14px;border-radius:4px 4px 0 0;border-bottom:none;background:transparent;color:var(--muted)}
+.tabs button.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.seg.full{display:flex}.seg.full button{flex:1}
+.opts{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.row2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+@media (max-width:1200px){.row2{grid-template-columns:minmax(0,1fr)}}
+.opts3d{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:10px}
+.opts3d .note{margin:0;margin-left:auto}
+.pointwrap{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:center}
+@media (max-width:760px){.pointwrap{grid-template-columns:minmax(0,1fr)}}
+#elemP{width:100%;max-width:360px;justify-self:center;display:block}
+button.primary{background:var(--cut);border-color:var(--cut);color:#fff;font-weight:600}
+button.primary:hover{filter:brightness(1.07);border-color:var(--cut)}
+.mono{font-family:var(--f-mono);font-weight:500;color:var(--cut)}
+.rng{width:100%;accent-color:var(--cut)}
+#secview svg{display:block;width:100%;cursor:crosshair;touch-action:none}
+#secview text{font-family:var(--f-mono);font-size:11.5px;fill:var(--muted)}
+#secview .ttl{font-family:var(--f-display);font-size:14px;font-weight:600;fill:var(--ink)}
+#mohrBig{width:100%;display:block;max-height:560px}
+#mohrBig text,.elems text,#elemP text{font-family:var(--f-mono);font-size:12px;fill:var(--ink)}
+#mohrBig .mut{fill:var(--muted)}
+.elems{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:1700px){.elems{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.elems svg{max-width:420px;margin:0 auto}
+@media (max-width:520px){.elems{grid-template-columns:minmax(0,1fr)}}
+.elems figure{margin:0;border:1px solid var(--line-soft);border-radius:4px;padding:6px;background:var(--paper);min-width:0}
+.elems svg{width:100%;display:block}
+.elems figcaption{font-family:var(--f-display);font-weight:600;font-size:14px;text-align:center;letter-spacing:.03em}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px}
+.lg::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle;background:currentColor}
+.lg.a{color:var(--ink)}.lg.t{color:var(--ten)}.lg.c{color:var(--comp)}.lg.tp{color:var(--tauV)}.lg.tn{color:var(--tauN)}.lg.p{color:var(--cut)}.lg.s{color:var(--ten)}
+.unitbar{max-width:1640px;margin:10px auto 0;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+.unitbar label{display:flex;gap:6px;align-items:center;font-size:13.5px;color:var(--muted)}
+.unitbar select{width:auto}
+.unitbar .note{margin:0}
+.unitbar b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+.forcebar .fb{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.forcebar h2{font-size:17px}
+.field.inl{grid-template-columns:auto 130px;align-items:center;gap:8px}
+.field.inl span{font-size:13.5px}
+.forcebar .note{margin:0;flex:1 1 220px}
+.credit{max-width:1640px;margin:28px auto 0;padding-block:14px 4px;border-top:1.5px solid var(--ink);display:grid;gap:2px;text-align:center}
+.credit p{margin:0;font-size:14px;color:var(--ink)}
+.credit b{font-weight:600}
+.credit .sub{font-size:12.5px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head><body>
+<header class="top">
+  <h1>Tensões em <span>Vigas</span></h1>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="viga" class="on">1 · Viga: esforços e tensões</button>
+    <button role="tab" data-tab="mohr">2 · Círculo de Mohr</button>
+  </nav>
+</header>
+<div class="unitbar">
+  <span class="lbl">Unidades</span>
+  <label>Viga <select id="u_L"><option>m</option><option>cm</option><option>mm</option></select></label>
+  <label>Seção e flecha <select id="u_d"><option>mm</option><option selected>cm</option><option>m</option></select></label>
+  <label>Força <select id="u_F"><option>kN</option><option>N</option></select></label>
+  <span class="note">Tensão e E em <b id="sAlias">kN/mm²</b> (força/área, coerente com as escolhas)</span>
+</div>
+
+<!-- ================= ABA VIGA ================= -->
+<div class="app" id="tab-viga">
+<aside>
+  <section class="card">
+    <label class="field"><span class="lbl">Exemplo</span><select id="preset"></select></label>
+  </section>
+  <section class="card">
+    <header><h2>Viga e apoios</h2></header>
+    <div class="grid2">
+      <label class="field"><span>Vão total L (<span data-u="L"></span>)</span><input id="L" type="number" step="any" min="0"></label>
+      <label class="field"><span>Vinculação</span>
+        <select id="supType">
+          <option value="simple">Biapoiada</option>
+          <option value="cantL">Balanço, engaste à esq.</option>
+          <option value="cantR">Balanço, engaste à dir.</option>
+        </select></label>
+      <label class="field" id="fxA"><span>Apoio A, fixo (<span data-u="L"></span>)</span><input id="xA" type="number" step="any" min="0"></label>
+      <label class="field" id="fxB"><span>Apoio B, móvel (<span data-u="L"></span>)</span><input id="xB" type="number" step="any" min="0"></label>
+    </div>
+    <p class="note" id="supNote"></p>
+    <p class="warn" id="supWarn" hidden></p>
+  </section>
+
+  <section class="card">
+    <header><h2>Seção transversal</h2></header>
+    <div class="seg full" id="secSeg">
+      <button data-sec="rect">Retangular</button><button data-sec="I">Perfil I</button><button data-sec="T">Perfil T</button>
+    </div>
+    <div class="grid2" id="secParams" style="margin-top:10px"></div>
+    <label class="field" style="margin-top:8px"><span>Módulo de elasticidade E (<span data-u="E"></span>). Aço ≈ 200 GPa, concreto ≈ 25 a 35 GPa</span><input id="E" type="number" step="any" min="0"></label>
+    <p class="warn" id="secWarn" hidden></p>
+    <dl class="props" id="secProps"></dl>
+  </section>
+
+  <section class="card">
+    <header><h2>Carregamento</h2></header>
+    <div class="loads" id="loads"></div>
+    <div class="adds">
+      <button data-add="P">+ Força</button>
+      <button data-add="q">+ Distribuída</button>
+      <button data-add="C">+ Momento</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <details class="help">
+      <summary>Convenções de sinal</summary>
+      <ul>
+        <li><b>P, q</b> positivos para baixo. <b>Momento aplicado</b> positivo anti-horário.</li>
+        <li><b>V</b> positivo: forças à esquerda do corte resultam para cima.</li>
+        <li><b>M</b> positivo traciona a fibra inferior.</li>
+        <li><b>σ</b> positivo = tração. y para cima a partir da linha neutra.</li>
+        <li><b>τ</b> pela fórmula τ = VQ/(I·t), uniforme na largura t. Nas abas das mesas, τ é horizontal (fluxo de cisalhamento).</li>
+      </ul>
+    </details>
+  </section>
+</aside>
+
+<main>
+  <section class="card">
+    <header><h2>Carregamento, esforços e deflexão</h2>
+      <div class="opts">
+        <label class="chk"><input type="checkbox" id="showTan" checked> inclinações no corte</label>
+        <label class="chk"><input type="checkbox" id="mTension" checked> M do lado tracionado</label>
+      </div>
+    </header>
+    <div id="diagrams"></div>
+    <div class="cutbar">
+      <span class="lbl">Corte em</span>
+      <input type="range" id="xcut" min="0" max="1000" step="1" aria-label="Posição do corte">
+      <span class="xval" id="xval"></span>
+      <div class="chips" id="chips"></div>
+    </div>
+  </section>
+
+  <section class="card forcebar">
+    <div class="fb">
+      <h2>Esforços usados nas tensões</h2>
+      <div class="seg" id="fmSeg"><button data-fm="beam" class="on">Do corte da viga</button><button data-fm="manual">Informar V e M</button></div>
+      <label class="field inl" id="fmV" hidden><span>V (<span data-u="F"></span>)</span><input id="manV" type="number" step="any"></label>
+      <label class="field inl" id="fmM" hidden><span>M (<span data-u="M"></span>)</span><input id="manM" type="number" step="any"></label>
+      <span class="note" id="fmNote"></span>
+    </div>
+  </section>
+
+  <div class="row2">
+    <section class="card view3d">
+      <header>
+        <h2>Tensões na face do corte</h2>
+        <div class="opts">
+          <div class="seg" id="modeSeg">
+            <button data-mode="sigma" class="on">Normal σ</button>
+            <button data-mode="tau">Cisalhamento τ</button>
+          </div>
+        </div>
+      </header>
+      <canvas id="c3d" aria-label="Trecho da viga com as tensões na face do corte"></canvas>
+      <div class="opts3d">
+        <label class="chk"><input type="checkbox" id="showForces" checked> mostrar V e M na face</label>
+        <label class="chk"><input type="checkbox" id="globalScale" checked> escala fixa (viga toda)</label>
+        <button id="resetCam">Recentrar vista</button>
+        <span class="note">arraste para girar · roda para zoom</span>
+      </div>
+      <p class="note" id="modeNote"></p>
+    </section>
+
+    <section class="card">
+      <header><h2>Seção e distribuição</h2></header>
+      <div id="secview"></div>
+      <p class="note">Clique na seção para escolher o ponto P.</p>
+    </section>
+  </div>
+
+  <section class="card">
+    <header><h2>Elemento no ponto P</h2><div class="legend"><span class="lg t">tração</span><span class="lg c">compressão</span><span class="lg tp">τ positivo</span><span class="lg tn">τ negativo</span></div><button id="toMohr" class="primary">Levar para o círculo de Mohr →</button></header>
+    <div class="pointwrap">
+      <div class="form" id="formulas"></div>
+      <svg id="elemP" viewBox="0 0 300 300" aria-label="Elemento de tensão no ponto P"></svg>
+    </div>
+  </section>
+</main>
+</div>
+
+<!-- ================= ABA MOHR ================= -->
+<div class="app" id="tab-mohr" hidden>
+<aside>
+  <section class="card">
+    <header><h2>Estado plano de tensão</h2></header>
+    <div class="grid3">
+      <label class="field"><span>σx (<span data-u="s"></span>)</span><input id="m_sx" type="number" step="1" value="-20"></label>
+      <label class="field"><span>σy (<span data-u="s"></span>)</span><input id="m_sy" type="number" step="1" value="90"></label>
+      <label class="field"><span>τxy (<span data-u="s"></span>)</span><input id="m_txy" type="number" step="1" value="60"></label>
+    </div>
+    <p class="note">Tração positiva. τxy positivo atua na face +x no sentido +y.</p>
+    <div class="field" style="margin-top:10px">
+      <span>Rotação do elemento θ (anti-horário +): <b id="m_thv" class="mono"></b></span>
+      <input id="m_th" type="range" min="-90" max="90" step="0.5" value="30" class="rng">
+    </div>
+    <div class="adds">
+      <button id="m_toP">θ = θp</button><button id="m_toS">θ = θs</button><button id="m_to0">θ = 0</button>
+    </div>
+    <p class="note" id="m_src"></p>
+  </section>
+  <section class="card">
+    <header><h2>Resultados</h2></header>
+    <div class="form" id="m_res"></div>
+  </section>
+  <section class="card">
+    <details class="help" open>
+      <summary>Como construir (Hibbeler)</summary>
+      <ul>
+        <li>Eixos: σ para a direita, <b>τ positivo para baixo</b>.</li>
+        <li>Centro C = (σméd; 0), σméd = (σx + σy)/2.</li>
+        <li>Ponto de referência A = (σx; τxy), que representa a face x.</li>
+        <li>Raio R = √[((σx − σy)/2)² + τxy²].</li>
+        <li>Girar o elemento θ no sentido anti-horário equivale a girar o raio CA de 2θ no mesmo sentido.</li>
+      </ul>
+    </details>
+  </section>
+</aside>
+<main>
+  <section class="card">
+    <header><h2>Círculo de Mohr</h2>
+      <div class="legend"><span class="lg a">A: face x</span><span class="lg p">P: face x′ (θ)</span><span class="lg s">σ₁, σ₂</span></div>
+    </header>
+    <svg id="mohrBig" viewBox="0 0 640 440" aria-label="Círculo de Mohr"></svg>
+  </section>
+  <section class="card">
+    <header><h2>Elementos</h2><div class="legend"><span class="lg t">tração</span><span class="lg c">compressão</span><span class="lg tp">τ positivo</span><span class="lg tn">τ negativo</span></div></header>
+    <div class="elems">
+      <figure><svg id="e_orig" viewBox="0 0 300 300"></svg><figcaption>Estado dado (x, y)</figcaption></figure>
+      <figure><svg id="e_rot" viewBox="0 0 300 300"></svg><figcaption id="cap_rot">Rotacionado de θ</figcaption></figure>
+      <figure><svg id="e_pr" viewBox="0 0 300 300"></svg><figcaption id="cap_pr">Tensões principais</figcaption></figure>
+      <figure><svg id="e_sh" viewBox="0 0 300 300"></svg><figcaption id="cap_sh">Cisalhamento máximo no plano</figcaption></figure>
+    </div>
+  </section>
+</main>
+</div>
+
+<footer class="credit">
+  <p>Desenvolvido pelo <b>Prof. Marcelo Melo</b> · Departamento de Estruturas · Escola Politécnica da UFRJ</p>
+  <p class="sub">Material didático de Resistência dos Materiais II. Convenções de sinal conforme Hibbeler.</p>
+</footer>
+<script>
+// ENGINE START
+// Unidades: viga em m e kN; seção em mm; tensões em MPa.
+// Convenções (Hibbeler): y para cima, x ao longo da viga.
+// P e q positivos para baixo; momento aplicado C positivo anti-horário.
+// V positivo = soma das forças para cima à esquerda do corte;
+// M positivo traciona a fibra inferior.
+const Eng = (() => {
+  const EPS = 1e-7;
+  function qInt(l, c) {
+    const d = c - l.a, k = (l.q2 - l.q1) / (l.b - l.a);
+    return { F: l.q1 * d + k * d * d / 2, Ms: l.q1 * (l.a * d + d * d / 2) + k * (l.a * d * d / 2 + d * d * d / 3) };
+  }
+  function solve(model) {
+    const L = model.L, sup = model.support, loads = model.loads;
+    let F = 0, Mo = 0;
+    for (const l of loads) {
+      if (l.type === 'P') { F += l.P; Mo -= l.P * l.x; }
+      else if (l.type === 'q') { const r = qInt(l, l.b); F += r.F; Mo -= r.Ms; }
+      else if (l.type === 'C') Mo += l.C;
+    }
+    const reac = [];
+    if (sup.type === 'simple') {
+      const RB = -(Mo + F * sup.xA) / (sup.xB - sup.xA), RA = F - RB;
+      reac.push({ type: 'P', x: sup.xA, P: -RA, react: true, name: 'A' }, { type: 'P', x: sup.xB, P: -RB, react: true, name: 'B' });
+    } else if (sup.type === 'cantL') {
+      reac.push({ type: 'P', x: 0, P: -F, react: true, name: 'A' }, { type: 'C', x: 0, C: -Mo, react: true, name: 'A' });
+    } else {
+      reac.push({ type: 'P', x: L, P: -F, react: true, name: 'B' }, { type: 'C', x: L, C: -(Mo + F * L), react: true, name: 'B' });
+    }
+    const all = loads.concat(reac);
+    function at(x) {
+      let V = 0, M = 0;
+      for (const l of all) {
+        if (l.type === 'P') { if (l.x < x) { V -= l.P; M -= l.P * (x - l.x); } }
+        else if (l.type === 'C') { if (l.x < x) M -= l.C; }
+        else if (l.type === 'q' && l.a < x) { const r = qInt(l, Math.min(x, l.b)); V -= r.F; M -= x * r.F - r.Ms; }
+      }
+      return { V, M };
+    }
+    function qAt(x) { let q = 0; for (const l of loads) if (l.type === 'q' && x > l.a && x < l.b) q += l.q1 + (l.q2 - l.q1) * (x - l.a) / (l.b - l.a); return q; }
+    const set = []; const N = 400;
+    for (let i = 0; i <= N; i++) set.push(L * i / N);
+    for (const l of all) { if ('x' in l) set.push(l.x - EPS, l.x + EPS); if ('a' in l) set.push(l.a - EPS, l.a + EPS, l.b - EPS, l.b + EPS); }
+    const xs = [...new Set(set.map(x => Math.min(L - EPS, Math.max(EPS, x))))].sort((a, b) => a - b);
+    const V = [], M = [];
+    for (const x of xs) { const f = at(x); V.push(f.V); M.push(f.M); }
+    const ext = arr => { let mx = -Infinity, mn = Infinity, imx = 0, imn = 0; arr.forEach((v, i) => { if (v > mx) { mx = v; imx = i; } if (v < mn) { mn = v; imn = i; } }); return { max: mx, xmax: xs[imx], min: mn, xmin: xs[imn] }; };
+    return { all, reac, loads, at, qAt, xs, V, M, ext: { V: ext(V), M: ext(M) } };
+  }
+  function section(sec) {
+    let rects;
+    if (sec.type === 'rect') rects = [{ w: sec.b, h: sec.h }];
+    else if (sec.type === 'I') rects = [{ w: sec.bf, h: sec.tf, fl: true }, { w: sec.tw, h: sec.h - 2 * sec.tf }, { w: sec.bf, h: sec.tf, fl: true }];
+    else rects = [{ w: sec.tw, h: sec.h - sec.tf }, { w: sec.bf, h: sec.tf, fl: true }];
+    let y = 0, A = 0, Sy = 0;
+    for (const r of rects) { r.y0 = y; r.y1 = y + r.h; y = r.y1; A += r.w * r.h; Sy += r.w * r.h * (r.y0 + r.h / 2); }
+    const yc = Sy / A; let I = 0;
+    for (const r of rects) { r.y0 -= yc; r.y1 -= yc; const d = (r.y0 + r.y1) / 2; I += r.w * r.h ** 3 / 12 + r.w * r.h * d * d; }
+    const S = { type: sec.type, rects, A, I, yc, h: y, ytop: y - yc, ybot: -yc, zmax: Math.max(...rects.map(r => r.w / 2)), tw: sec.tw || sec.b };
+    S.rectAt = yy => { for (const r of rects) if (yy >= r.y0 && yy < r.y1) return r; if (Math.abs(yy - S.ytop) < 1e-9) return rects[rects.length - 1]; return null; };
+    S.t = yy => { const r = S.rectAt(yy); return r ? r.w : 0; };
+    S.halfW = yy => S.t(yy) / 2;
+    S.Q = yy => { let Q = 0; for (const r of rects) if (yy < r.y1) { const lo = Math.max(yy, r.y0); Q += r.w * (r.y1 * r.y1 - lo * lo) / 2; } return Q; };
+    S.contains = (yy, z) => { const r = S.rectAt(yy); return !!r && Math.abs(z) <= r.w / 2; };
+    S.clamp = (yy, z) => { const e = S.h * 1e-4; yy = Math.min(Math.max(yy, S.ybot + e), S.ytop - e); const r = S.rectAt(yy); const hw = r.w / 2 * 0.9995; return [yy, Math.min(Math.max(z, -hw), hw)]; };
+    const right = [], left = [];
+    for (const r of rects) right.push([r.w / 2, r.y0], [r.w / 2, r.y1]);
+    for (let i = rects.length - 1; i >= 0; i--) { const r = rects[i]; left.push([-r.w / 2, r.y1], [-r.w / 2, r.y0]); }
+    S.outer = right.concat(left).filter((p, i, a) => { const q = a[(i + a.length - 1) % a.length]; return Math.abs(p[0] - q[0]) > 1e-9 || Math.abs(p[1] - q[1]) > 1e-9; });
+    return S;
+  }
+  // f = {V (kN), M (kN·m)}; y, z em mm
+  function stress(S, f, y, z) {
+    const sigma = -f.M * 1e6 * y / S.I;
+    const Q = S.Q(y), t = S.t(y);
+    const txy = t > 1e-9 ? -f.V * 1e3 * Q / (S.I * t) : 0;
+    let txz = 0, Qf = 0;
+    const r = S.rectAt(y);
+    if (r && r.fl && Math.abs(z) > S.tw / 2) { const ym = (r.y0 + r.y1) / 2; Qf = r.h * (r.w / 2 - Math.abs(z)) * Math.abs(ym); txz = -f.V * 1e3 * (r.w / 2 - Math.abs(z)) * ym * Math.sign(z) / S.I; }
+    return { sigma, txy, txz, tau: Math.hypot(txy, txz), Q, t, Qf, flange: !!(r && r.fl && Math.abs(z) > S.tw / 2) };
+  }
+  // estado plano geral (Hibbeler)
+  function mohr(sx, sy, txy) {
+    const c = (sx + sy) / 2, R = Math.hypot((sx - sy) / 2, txy);
+    const thp = 0.5 * Math.atan2(2 * txy, sx - sy) * 180 / Math.PI; // de x até σ1, anti-horário +
+    let ths = thp - 45; if (ths < -90) ths += 180;
+    return { c, R, s1: c + R, s2: c - R, thp, thp2: thp > 0 ? thp - 90 : thp + 90, ths, tmax: R };
+  }
+  function transform(sx, sy, txy, thDeg) {
+    const t = 2 * thDeg * Math.PI / 180, a = (sx + sy) / 2, b = (sx - sy) / 2;
+    return { sx: a + b * Math.cos(t) + txy * Math.sin(t), sy: a - b * Math.cos(t) - txy * Math.sin(t), txy: -b * Math.sin(t) + txy * Math.cos(t) };
+  }
+  // linha elástica: v'' = M/EI (v positivo para cima). EI em kN·m², v em m, θ em rad.
+  function deflect(res, sup, L, EI) {
+    const xs = res.xs, M = res.M, n = xs.length, G = [0], F = [0];
+    for (let i = 1; i < n; i++) { const dx = xs[i] - xs[i - 1]; G[i] = G[i - 1] + (M[i] + M[i - 1]) / 2 * dx / EI; F[i] = F[i - 1] + (G[i] + G[i - 1]) / 2 * dx; }
+    const interp = (arr, x) => { if (x <= xs[0]) return arr[0]; if (x >= xs[n - 1]) return arr[n - 1]; let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; xs[m] <= x ? lo = m : hi = m; } const t = (x - xs[lo]) / (xs[hi] - xs[lo] || 1); return arr[lo] + (arr[hi] - arr[lo]) * t; };
+    let th0 = 0, v0 = 0;
+    if (sup.type === 'simple') { const FA = interp(F, sup.xA), FB = interp(F, sup.xB); th0 = -(FB - FA) / (sup.xB - sup.xA); v0 = -FA - th0 * sup.xA; }
+    else if (sup.type === 'cantR') { th0 = -G[n - 1]; v0 = -F[n - 1] - th0 * xs[n - 1]; }
+    const v = xs.map((x, i) => v0 + th0 * x + F[i]), th = G.map(g => th0 + g);
+    let imn = 0, imx = 0; v.forEach((a, i) => { if (a < v[imn]) imn = i; if (a > v[imx]) imx = i; });
+    return { v, th, at: x => ({ v: interp(v, x), th: interp(th, x) }), min: v[imn], xmin: xs[imn], max: v[imx], xmax: xs[imx] };
+  }
+  return { solve, section, stress, mohr, transform, deflect, EPS };
+})();
+// ENGINE END
+// ===================== UI comum =====================
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const nf = {};
+function fmt(v, d = 2) {
+  if (!isFinite(v)) return '–';
+  if (Math.abs(v) < 0.5 * Math.pow(10, -d)) v = 0;
+  if (!nf[d]) nf[d] = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  return nf[d].format(v);
+}
+function sci(v) { if (v === 0) return '0'; const e = Math.floor(Math.log10(Math.abs(v))); const m = v / Math.pow(10, e); return fmt(m, 3) + '·10' + sup(e); }
+function sup(n) { const m = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' }; return String(n).split('').map(c => m[c]).join(''); }
+
+// ---------- unidades (internamente: viga em m, seção em mm, força em kN, tensão em MPa) ----------
+const UNITS = { L: { m: 1, cm: 0.01, mm: 0.001 }, d: { mm: 1, cm: 10, m: 1000 }, F: { kN: 1, N: 0.001 } };
+let unit = { L: 'm', d: 'cm', F: 'kN' };
+const UF = {
+  L: () => UNITS.L[unit.L], d: () => UNITS.d[unit.d], F: () => UNITS.F[unit.F],
+  M: () => UF.F() * UF.L(), q: () => UF.F() / UF.L(), A: () => UF.d() ** 2, Q: () => UF.d() ** 3, I: () => UF.d() ** 4,
+  s: () => UF.F() * 1000 / UF.d() ** 2, E: () => UF.s() / 1000, v: () => UF.d(), EI: () => UF.F() * UF.L() ** 2,
+};
+const ULAB = {
+  L: () => unit.L, d: () => unit.d, F: () => unit.F, M: () => unit.F + '·' + unit.L, q: () => unit.F + '/' + unit.L,
+  A: () => unit.d + '²', Q: () => unit.d + '³', I: () => unit.d + '⁴', s: () => unit.F + '/' + unit.d + '²', E: () => unit.F + '/' + unit.d + '²',
+  v: () => unit.d, EI: () => unit.F + '·' + unit.L + '²',
+};
+const uo = (k, si) => si / UF[k]();          // SI -> exibição
+const uin = (k, v) => v * UF[k]();           // exibição -> SI
+const ul = k => ULAB[k]();
+function nfs(v) { const a = Math.abs(v); if (a === 0) return '0'; if (a >= 1e6 || a < 1e-3) return sci(v); return fmt(v, a >= 1000 ? 0 : a >= 100 ? 1 : a >= 1 ? 2 : a >= 0.1 ? 3 : 4); }
+const fu = (k, si) => nfs(uo(k, si));
+const fuL = (k, si) => fu(k, si) + ' ' + ul(k);
+const sciU = (k, si) => sci(uo(k, si)) + ' ' + ul(k);
+const inVal = (k, si) => +uo(k, si).toPrecision(6);
+function stressAlias() { const s = UF.s(); return Math.abs(s - 1) < 1e-12 ? ' = MPa' : Math.abs(s - 0.001) < 1e-12 ? ' = kPa' : Math.abs(s - 1e-6) < 1e-15 ? ' = Pa' : Math.abs(s - 1000) < 1e-9 ? ' = GPa' : ''; }
+function refreshUnitLabels() { $$('[data-u]').forEach(e => e.textContent = ul(e.dataset.u)); $('#sAlias').textContent = ul('s') + stressAlias(); }
+
+let C = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  ['paper', 'panel', 'ink', 'muted', 'line', 'line-soft', 'cut', 'ten', 'comp', 'mapmid', 'tauV', 'steel', 'react', 'mdiag', 'defl', 'tauN'].forEach(k => C[k] = cs.getPropertyValue('--' + k).trim());
+}
+function hex2rgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function rgba(hex, a) { const c = hex2rgb(hex); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+function ramp(stops, t) {
+  t = Math.max(0, Math.min(1, t)); const n = stops.length - 1; const i = Math.min(n - 1, Math.floor(t * n)); const f = t * n - i;
+  const a = hex2rgb(stops[i]), b = hex2rgb(stops[i + 1]);
+  return `rgb(${Math.round(a[0] + (b[0] - a[0]) * f)},${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)})`;
+}
+function triSvg(x0, y0, x1, y1, col, s = 7) {
+  const a = Math.atan2(y1 - y0, x1 - x0);
+  const p = da => `${(x1 - s * Math.cos(a + da)).toFixed(1)},${(y1 - s * Math.sin(a + da)).toFixed(1)}`;
+  return `<polygon points="${x1.toFixed(1)},${y1.toFixed(1)} ${p(-0.4)} ${p(0.4)}" fill="${col}"/>`;
+}
+function arrowSvg(x0, y0, x1, y1, col, w = 1.8, s = 8) {
+  const a = Math.atan2(y1 - y0, x1 - x0), xe = x1 - s * 0.7 * Math.cos(a), ye = y1 - s * 0.7 * Math.sin(a);
+  return `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${xe.toFixed(1)}" y2="${ye.toFixed(1)}" stroke="${col}" stroke-width="${w}"/>` + triSvg(x0, y0, x1, y1, col, s);
+}
+function fit(cv) {
+  const dpr = window.devicePixelRatio || 1; const r = cv.getBoundingClientRect();
+  const W = Math.max(50, r.width), H = Math.max(50, r.height);
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return { ctx, W, H };
+}
+function arrowHead(ctx, x0, y0, x1, y1, s = 7) {
+  const a = Math.atan2(y1 - y0, x1 - x0);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 - s * Math.cos(a - 0.4), y1 - s * Math.sin(a - 0.4)); ctx.lineTo(x1 - s * Math.cos(a + 0.4), y1 - s * Math.sin(a + 0.4)); ctx.closePath(); ctx.fill();
+}
+function arrow(ctx, x0, y0, x1, y1, s = 7) {
+  const L = Math.hypot(x1 - x0, y1 - y0); if (L < 0.5) return;
+  const k = Math.max(0, (L - s * 0.7) / L);
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + (x1 - x0) * k, y0 + (y1 - y0) * k); ctx.stroke(); arrowHead(ctx, x0, y0, x1, y1, Math.min(s, L));
+}
+
+// ---------- elemento infinitesimal no padrão Hibbeler ----------
+// sx, sy, txy no sistema girado de 'ang' graus (anti-horário) em relação a x.
+// Cores: tração vermelho, compressão azul, τ positivo roxo, τ negativo verde.
+function elementSVG(o) {
+  const { sx = 0, sy = 0, txy = 0, ang = 0, xl = 'x', yl = 'y', W = 300, H = 300, showRef = ang !== 0 } = o;
+  const cx = W / 2, cy = H / 2, s = 72, h = s / 2, a = ang * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+  const R = (u, v) => [cx + u * ca - v * sa, cy - (u * sa + v * ca)];
+  const mut = C.muted, tol = 1e-6 * Math.max(1, Math.abs(sx), Math.abs(sy), Math.abs(txy));
+  const colN = v => v >= 0 ? C.ten : C.comp, colT = txy >= 0 ? C.tauV : C.tauN;
+  const T = (p, txt, col, anchor = 'middle', weight = 500) => `<text x="${p[0].toFixed(1)}" y="${(p[1] + 4).toFixed(1)}" text-anchor="${anchor}" style="fill:${col};font-weight:${weight};paint-order:stroke;stroke:${C.paper};stroke-width:4px;stroke-linejoin:round">${txt}</text>`;
+  let g = '';
+  const axLen = 122;
+  // referência x e ângulo θ
+  if (showRef) {
+    g += `<line x1="${cx}" y1="${cy}" x2="${cx + axLen}" y2="${cy}" stroke="${mut}" stroke-dasharray="4 3"/>` + T([cx + axLen + 8, cy], 'x', mut, 'start');
+    if (Math.abs(ang) > 0.5) {
+      const r = 104, sw = ang > 0 ? 0 : 1;
+      g += `<path d="M${cx + r},${cy} A${r},${r} 0 0 ${sw} ${(cx + r * Math.cos(a)).toFixed(1)},${(cy - r * Math.sin(a)).toFixed(1)}" fill="none" stroke="${C.cut}" stroke-width="1.4"/>`;
+      const am = a / 2; g += T([cx + (r + 14) * Math.cos(am), cy - (r + 14) * Math.sin(am)], fmt(Math.abs(ang), 1) + '°', C.cut, Math.cos(am) > 0.3 ? 'start' : 'middle');
+    }
+  }
+  // eixos do elemento
+  const ex = R(axLen, 0), ey = R(0, axLen);
+  g += arrowSvg(cx, cy, ex[0], ex[1], mut, 1, 7) + arrowSvg(cx, cy, ey[0], ey[1], mut, 1, 7);
+  const lx = R(axLen + 13, 0), ly = R(0, axLen + 13);
+  g += T(lx, xl, mut) + T(ly, yl, mut);
+  // elemento
+  const P = [R(-h, -h), R(h, -h), R(h, h), R(-h, h)];
+  g += `<polygon points="${P.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="${rgba(C.steel, 0.28)}" stroke="${C.ink}" stroke-width="1.4"/>`;
+  // normais
+  const Ln = 32;
+  const normal = (u, v, du, dv, val) => {
+    if (Math.abs(val) <= tol) return '';
+    const f = R(u, v), o2 = R(u + du * Ln, v + dv * Ln), col = colN(val);
+    return val > 0 ? arrowSvg(f[0], f[1], o2[0], o2[1], col, 2.2, 10) : arrowSvg(o2[0], o2[1], f[0], f[1], col, 2.2, 10);
+  };
+  g += normal(h, 0, 1, 0, sx) + normal(-h, 0, -1, 0, sx) + normal(0, h, 0, 1, sy) + normal(0, -h, 0, -1, sy);
+  // cisalhamento
+  const k = txy >= 0 ? 1 : -1;
+  if (Math.abs(txy) > tol) {
+    const gap = 8, l = 0.42 * s, d = h + gap;
+    const sh = (u0, v0, u1, v1) => { const p0 = R(u0, v0), p1 = R(u1, v1); return arrowSvg(p0[0], p0[1], p1[0], p1[1], colT, 2, 9); };
+    g += sh(d, -k * l, d, k * l) + sh(-d, k * l, -d, -k * l) + sh(-k * l, d, k * l, d) + sh(k * l, -d, -k * l, -d);
+  }
+  // rótulos: σx além da ponta da seta, do lado oposto ao arco; σy além da ponta; τ no canto onde as setas se encontram
+  const side = ang >= 0 ? 1 : -1;
+  if (Math.abs(sx) > tol) g += T(R(h + Ln + 6, side * 14), nfs(Math.abs(sx)), colN(sx), 'middle', 600);
+  if (Math.abs(sy) > tol) g += T(R(-side * 22, h + Ln + 4), nfs(Math.abs(sy)), colN(sy), 'middle', 600);
+  if (Math.abs(txy) > tol) g += T(R(h + 26, k * (h + 26)), nfs(Math.abs(txy)), colT, 'middle', 600);
+  g += T([W - 6, H - 8], ul('s'), mut, 'end');
+  return g;
+}
+
+// ---------- exemplos ----------
+const PRESETS = [
+  { name: 'Biapoiada com carga concentrada', xc: 2, model: { L: 6, support: { type: 'simple', xA: 0, xB: 6 }, section: { type: 'rect', b: 200, h: 500 }, loads: [{ type: 'P', x: 3, P: 50 }] } },
+  { name: 'Biapoiada com balanços e distribuída (perfil I)', xc: 1.6, model: { L: 8, support: { type: 'simple', xA: 1.5, xB: 6.5 }, section: { type: 'I', h: 400, bf: 200, tf: 16, tw: 10 }, loads: [{ type: 'q', a: 0, b: 8, q1: 20, q2: 20 }, { type: 'P', x: 4, P: 30 }] } },
+  { name: 'Balanço com carga triangular (perfil T)', xc: 0.4, model: { L: 3, support: { type: 'cantL' }, section: { type: 'T', h: 350, bf: 250, tf: 30, tw: 14 }, loads: [{ type: 'q', a: 0, b: 3, q1: 15, q2: 0 }] } },
+  { name: 'Momento aplicado no vão', xc: 2.2, model: { L: 5, support: { type: 'simple', xA: 0, xB: 5 }, section: { type: 'rect', b: 150, h: 400 }, loads: [{ type: 'C', x: 2, C: 30 }] } },
+];
+const SEC_DEF = { rect: { b: 200, h: 500 }, I: { h: 400, bf: 200, tf: 16, tw: 10 }, T: { h: 350, bf: 250, tf: 30, tw: 14 } };
+const SEC_FIELDS = {
+  rect: [['b', 'Largura b'], ['h', 'Altura h']],
+  I: [['h', 'Altura total h'], ['bf', 'Largura da mesa bf'], ['tf', 'Espessura da mesa tf'], ['tw', 'Espessura da alma tw']],
+  T: [['h', 'Altura total h'], ['bf', 'Largura da mesa bf'], ['tf', 'Espessura da mesa tf'], ['tw', 'Espessura da alma tw']],
+};
+const LOAD_DEF = {
+  P: { name: 'Força concentrada', f: [['x', 'x', 'L', ''], ['P', 'P', 'F', '↓+']] },
+  q: { name: 'Carga distribuída', f: [['a', 'início a', 'L', ''], ['b', 'fim b', 'L', ''], ['q1', 'q em a', 'q', '↓+'], ['q2', 'q em b', 'q', '↓+']] },
+  C: { name: 'Momento aplicado', f: [['x', 'x', 'L', ''], ['C', 'M', 'M', '↺+']] },
+};
+
+let model, xc, pt = { y: 0, z: 0 }, mode = 'sigma';
+let cam = { yaw: -1.05, pitch: 0.32, zoom: 1 };
+let dfl, EIk = 1, res, S, refs, uid = 1, secPts = [], resetPoint = true;
+const clone = o => JSON.parse(JSON.stringify(o));
+
+function loadPreset(i) {
+  const p = PRESETS[i]; model = clone(p.model); if (!model.E) model.E = model.section.type === 'rect' ? 30 : 200; model.loads.forEach(l => l.id = uid++);
+  xc = p.xc; syncInputs(); renderLoads(); resetPoint = true; full();
+}
+function syncInputs() {
+  $('#L').value = inVal('L', model.L); $('#E').value = inVal('E', model.E); $('#supType').value = model.support.type;
+  $('#xA').value = inVal('L', model.support.xA ?? 0); $('#xB').value = inVal('L', model.support.xB ?? model.L);
+  renderSecParams();
+}
+function renderSecParams() {
+  const s = model.section;
+  $$('#secSeg button').forEach(b => b.classList.toggle('on', b.dataset.sec === s.type));
+  $('#secParams').innerHTML = SEC_FIELDS[s.type].map(([k, lab]) => `<label class="field"><span>${lab} (${ul('d')})</span><input type="number" step="any" min="0" data-sec="${k}" value="${inVal('d', s[k])}"></label>`).join('');
+}
+function renderLoads() {
+  $('#loads').innerHTML = model.loads.map(l => {
+    const d = LOAD_DEF[l.type];
+    return `<div class="load" data-t="${l.type}" data-id="${l.id}">
+      <div class="hd"><b>${d.name}</b><button class="x" data-del="${l.id}" aria-label="Remover">×</button></div>
+      <div class="grid2">${d.f.map(([k, lab, uk, sfx]) => `<label class="field"><span>${lab} (${ul(uk)}) ${sfx}</span><input type="number" step="any" data-k="${k}" data-uk="${uk}" value="${inVal(uk, l[k])}"></label>`).join('')}</div></div>`;
+  }).join('') || '<p class="note">Sem cargas. Use os botões abaixo.</p>';
+}
+function newLoad(type) {
+  const L = model.L, m = +(L / 2).toFixed(2);
+  const base = { P: { x: m, P: 10 }, q: { a: 0, b: L, q1: 10, q2: 10 }, C: { x: m, C: 10 } }[type];
+  model.loads.push({ type, id: uid++, ...base }); renderLoads(); full();
+}
+function sanitize() {
+  const m = model; m.L = Math.max(0.2, +m.L || 1);
+  const L = m.L, cl = v => Math.min(L, Math.max(0, +v || 0)), w = [];
+  if (m.support.type === 'simple') { m.support.xA = cl(m.support.xA); m.support.xB = cl(m.support.xB); if (m.support.xB - m.support.xA < 0.01) w.push('O apoio B deve ficar à direita do apoio A.'); }
+  for (const l of m.loads) {
+    if ('x' in l) l.x = cl(l.x);
+    if ('a' in l) { l.a = cl(l.a); l.b = cl(l.b); if (l.b - l.a < 1e-3) { l.b = Math.min(L, l.a + 1e-3); if (l.b - l.a < 1e-3) l.a = l.b - 1e-3; } }
+    for (const k of ['P', 'q1', 'q2', 'C']) if (k in l) l[k] = +l[k] || 0;
+  }
+  const s = m.section, sw = [];
+  for (const [k] of SEC_FIELDS[s.type]) s[k] = Math.max(0.1, +s[k] || 1);
+  if (s.type === 'I' && 2 * s.tf >= s.h) sw.push('2·tf deve ser menor que h.');
+  if (s.type === 'T' && s.tf >= s.h) sw.push('tf deve ser menor que h.');
+  if (s.type !== 'rect' && s.tw > s.bf) sw.push('tw não pode ser maior que bf.');
+  $('#supWarn').hidden = !w.length; $('#supWarn').textContent = w.join(' ');
+  $('#secWarn').hidden = !sw.length; $('#secWarn').textContent = sw.join(' ');
+  return !w.length && !sw.length;
+}
+function compute() {
+  const ok = sanitize(), m = clone(model);
+  if (!ok) {
+    if (m.support.type === 'simple' && m.support.xB - m.support.xA < 0.01) { m.support.xB = Math.min(m.L, m.support.xA + 0.01); m.support.xA = m.support.xB - 0.01; }
+    const s = m.section; if (s.type === 'I') s.tf = Math.min(s.tf, s.h * 0.45); if (s.type === 'T') s.tf = Math.min(s.tf, s.h * 0.9); if (s.tw > s.bf) s.tw = s.bf;
+  }
+  S = Eng.section(m.section); res = Eng.solve(m);
+  EIk = Math.max(1e-6, +model.E || 1) * 1e6 * S.I * 1e-12; dfl = Eng.deflect(res, m.support, m.L, EIk);
+  secPts = []; const n = 23;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { let y = S.ybot + (S.ytop - S.ybot) * i / (n - 1), z = -S.zmax + 2 * S.zmax * j / (n - 1); if (!S.contains(y, z)) [y, z] = S.clamp(y, z); secPts.push([y, z]); }
+  for (const r of S.rects) secPts.push([r.y0 + 1e-6, 0], [r.y1 - 1e-6, 0]); secPts.push([0, 0]);
+  let sg = 0, ta = 0;
+  for (let i = 0; i < res.xs.length; i++) { const f = { V: res.V[i], M: res.M[i] }; for (const [y, z] of secPts) { const st = Eng.stress(S, f, y, z); sg = Math.max(sg, Math.abs(st.sigma)); ta = Math.max(ta, st.tau); } }
+  refs = { sigma: sg || 1, tau: ta || 1 };
+  if (resetPoint) { let y = S.ytop * 0.55, z = 0; if (!S.contains(y, z)) [y, z] = S.clamp(y, z); pt = { y, z }; resetPoint = false; }
+  if (!S.contains(pt.y, pt.z)) { const c = S.clamp(pt.y, pt.z); pt = { y: c[0], z: c[1] }; }
+}
+let forceMode = 'beam', manF = { V: 0, M: 0 };
+function beamForcesAt() { return res.at(Math.min(model.L - Eng.EPS, Math.max(Eng.EPS, xc))); }
+function forcesAt() { return forceMode === 'manual' ? manF : beamForcesAt(); }
+function curRef(f) {
+  if ($('#globalScale').checked && forceMode === 'beam') return refs;
+  let sg = 0, ta = 0; for (const [y, z] of secPts) { const st = Eng.stress(S, f, y, z); sg = Math.max(sg, Math.abs(st.sigma)); ta = Math.max(ta, st.tau); }
+  return { sigma: sg || 1e-9, tau: ta || 1e-9 };
+}
+function updateProps() {
+  const r = [['A', fuL('A', S.A)], ['I', sciU('I', S.I)], ['LN a partir da base', fuL('d', S.yc)], ['Q na LN', sciU('Q', S.Q(0))], ['EI', sciU('EI', EIk)]];
+  $('#secProps').innerHTML = r.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
+  const st = model.support.type;
+  $('#fxA').hidden = $('#fxB').hidden = st !== 'simple';
+  $('#supNote').textContent = st === 'simple' ? 'Posicione A e B onde quiser para criar balanços.' : st === 'cantL' ? 'Engaste em x = 0, extremidade livre em x = L.' : 'Engaste em x = L, extremidade livre em x = 0.';
+}
+// ---------- 3D: trecho da viga à esquerda do corte, com as tensões na face +x ----------
+function draw3D() {
+  const cv = $('#c3d'); const { ctx, W, H } = fit(cv); ctx.clearRect(0, 0, W, H);
+  const f = forcesAt(), ref = curRef(f);
+  const h = S.h, zm = S.zmax, Ls = 1.2 * Math.max(h, 2 * zm), Amax = 0.9 * h;
+  const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  const rot = (x, y, z) => { const x1 = x * cy + z * sy, z1 = -x * sy + z * cy; return [x1, y * cp - z1 * sp, y * sp + z1 * cp]; };
+  const fx = 0.15 * h, fyc = (S.ytop + S.ybot) / 2;
+  const sc = Math.min(W * 0.8 / (0.5 * Ls + 0.5 * Amax + 1.8 * zm + 2.3 * h), H * 0.8 / (h * 1.5 + zm * 0.5)) * cam.zoom;
+  const P = (x, y, z) => { const q = rot(x - fx, y - fyc, z); return [W / 2 + q[0] * sc, H * 0.5 - q[1] * sc, q[2]]; };
+  const light = (() => { const v = [-0.35, 0.65, 0.68]; const n = Math.hypot(...v); return v.map(a => a / n); })();
+  const steel = hex2rgb(C.steel);
+  const shade = (n, a = 1) => { const r = rot(...n); const b = 0.66 + 0.34 * Math.max(0, r[0] * light[0] + r[1] * light[1] + r[2] * light[2]); return `rgba(${Math.round(steel[0] * b)},${Math.round(steel[1] * b)},${Math.round(steel[2] * b)},${a})`; };
+  const poly = (pts, fill, stroke, lw = 1) => { ctx.beginPath(); pts.forEach((p, i) => { const q = P(...p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); } };
+  const ar3 = (a, b, col, w = 1.5, s = 7) => { const p = P(...a), q = P(...b); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = w; arrow(ctx, p[0], p[1], q[0], q[1], s); };
+  const text = (t, p3, col, al = 'center', font = '500 12px "IBM Plex Mono", monospace') => { const p = P(...p3); ctx.font = font; ctx.textAlign = al; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round'; ctx.strokeStyle = rgba(C.panel, 0.9); ctx.lineWidth = 4; ctx.strokeText(t, p[0], p[1]); ctx.fillStyle = col; ctx.fillText(t, p[0], p[1]); };
+  const outer = S.outer;
+  // ---- sólido ----
+  const faces = [];
+  for (let i = 0; i < outer.length; i++) {
+    const a = outer[i], b = outer[(i + 1) % outer.length]; const dz = b[0] - a[0], dy = b[1] - a[1], ln = Math.hypot(dz, dy) || 1;
+    faces.push({ pts: [[-Ls, a[1], a[0]], [0, a[1], a[0]], [0, b[1], b[0]], [-Ls, b[1], b[0]]], n: [0, -dz / ln, dy / ln] });
+  }
+  faces.push({ pts: outer.map(([z, y]) => [-Ls, y, z]), n: [-1, 0, 0] });
+  faces.forEach(fc => { fc.vis = rot(...fc.n)[2] > 1e-4; fc.d = fc.pts.reduce((s, p) => s + P(...p)[2], 0) / fc.pts.length; });
+  faces.filter(fc => fc.vis).sort((a, b) => a.d - b.d).forEach(fc => poly(fc.pts, shade(fc.n), shade(fc.n, 1), 0.8));
+  // ---- face do corte colorida ----
+  const faceVisible = rot(1, 0, 0)[2] > 0;
+  if (faceVisible) {
+    ctx.save(); poly(outer.map(([z, y]) => [0, y, z])); ctx.clip();
+    const n = 30;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const za = -zm + 2 * zm * j / n, zb = -zm + 2 * zm * (j + 1) / n, ya = S.ybot + h * i / n, yb = S.ybot + h * (i + 1) / n;
+      let ym = (ya + yb) / 2, zz = (za + zb) / 2; if (!S.contains(ym, zz)) [ym, zz] = S.clamp(ym, zz);
+      const st = Eng.stress(S, f, ym, zz);
+      const col = mode === 'sigma' ? ramp([C.comp, C.mapmid, C.ten], 0.5 + 0.5 * st.sigma / ref.sigma) : ramp([C.mapmid, C.tauV], st.tau / ref.tau);
+      poly([[0, ya, za], [0, ya, zb], [0, yb, zb], [0, yb, za]], col, col, 0.6);
+    }
+    ctx.restore();
+  }
+  poly(outer.map(([z, y]) => [0, y, z]), null, C.cut, 2);
+  const hw0 = S.halfW(0);
+  ctx.setLineDash([5, 4]); { const a = P(0, 0, -hw0 - 0.08 * h), b = P(0, 0, hw0 + 0.08 * h); ctx.strokeStyle = C.ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); } ctx.setLineDash([]);
+  text('LN', [0, 0, -hw0 - 0.17 * h], C.ink, 'center', '600 13px "Barlow Condensed", sans-serif');
+
+  // ---- tensões ----
+  if (mode === 'sigma') {
+    const d = y => Math.abs(-f.M * 1e6 * y / S.I) / ref.sigma * Amax;
+    const strips = [];
+    for (const r of S.rects) { if (r.y0 < 0) strips.push([r.y0, Math.min(r.y1, 0), r.w]); if (r.y1 > 0) strips.push([Math.max(r.y0, 0), r.y1, r.w]); }
+    for (const [ya, yb, w] of strips) {
+      const col = (-f.M * (ya + yb)) >= 0 ? C.ten : C.comp; const da = d(ya), db = d(yb);
+      if (Math.max(da, db) < 1e-6) continue;
+      poly([[0, ya, w / 2], [da, ya, w / 2], [db, yb, w / 2], [0, yb, w / 2]], rgba(col, 0.12), rgba(col, 0.5));
+      poly([[0, ya, -w / 2], [da, ya, -w / 2], [db, yb, -w / 2], [0, yb, -w / 2]], rgba(col, 0.12), rgba(col, 0.5));
+      poly([[da, ya, -w / 2], [da, ya, w / 2], [db, yb, w / 2], [db, yb, -w / 2]], rgba(col, 0.18), rgba(col, 0.85), 1.2);
+    }
+    const ys = []; for (let i = 0; i <= 10; i++) ys.push(S.ybot + h * i / 10); S.rects.forEach(r => ys.push(r.y0 + h * 2e-3, r.y1 - h * 2e-3));
+    [...new Set(ys.map(v => +v.toFixed(5)))].sort((a, b) => a - b).forEach(y => {
+      const w = S.t(Math.min(y, S.ytop - 1e-9)); if (!w) return; const s = -f.M * 1e6 * y / S.I, L = d(y); if (L < h * 0.03) return;
+      const nz = Math.max(1, Math.round(w / (h / 6))), col = s >= 0 ? C.ten : C.comp;
+      for (let k = 0; k <= nz; k++) { const z = -w / 2 + w * k / nz; s >= 0 ? ar3([0, y, z], [L, y, z], col, 1.4, 6) : ar3([L, y, z], [0, y, z], col, 1.4, 6); }
+    });
+    const sT = -f.M * 1e6 * S.ytop / S.I, sB = -f.M * 1e6 * S.ybot / S.I, wT = S.t(S.ytop - 1e-6), wB = S.t(S.ybot + 1e-6);
+    text('σ = ' + fuL('s', sT), [d(S.ytop) + 0.05 * h, S.ytop + 0.08 * h, wT / 2], sT >= 0 ? C.ten : C.comp, 'left');
+    text('σ = ' + fuL('s', sB), [d(S.ybot) + 0.05 * h, S.ybot - 0.08 * h, wB / 2], sB >= 0 ? C.ten : C.comp, 'left');
+    $('#modeNote').innerHTML = '<b>σ = −M·y/I</b>: varia linearmente com y e é nula na linha neutra. Seta saindo da face = tração; seta chegando à face = compressão.';
+  } else {
+    // envelope de intensidade |τ(y)| desenhado fora da face (como o prisma de σ)
+    const tcol = -f.V >= 0 ? C.tauV : C.tauN;
+    const dT = y => Math.abs(Eng.stress(S, f, y, 0).txy) / ref.tau * Amax * 0.85;
+    for (const r of S.rects) {
+      const n = 16, w = r.w, yy = [], dd = [];
+      for (let i = 0; i <= n; i++) { const y = r.y0 + (r.y1 - r.y0) * (i === 0 ? 1e-4 : i === n ? 1 - 1e-4 : i / n); yy.push(y); dd.push(dT(y)); }
+      if (Math.max(...dd) < 1e-6) continue;
+      for (const zs of [-w / 2, w / 2]) poly([[0, yy[0], zs], ...yy.map((y, i) => [dd[i], y, zs]), [0, yy[n], zs]], rgba(tcol, 0.12), rgba(tcol, 0.55));
+      for (let i = 0; i < n; i++) poly([[dd[i], yy[i], -w / 2], [dd[i], yy[i], w / 2], [dd[i + 1], yy[i + 1], w / 2], [dd[i + 1], yy[i + 1], -w / 2]], rgba(tcol, 0.16), null);
+      for (const zs of [-w / 2, w / 2]) { ctx.beginPath(); yy.forEach((y, i) => { const q = P(dd[i], y, zs); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.strokeStyle = tcol; ctx.lineWidth = 1.6; ctx.stroke(); }
+      // linhas de cota ligando face e envelope
+      for (let i = 0; i <= n; i += 4) for (const zs of [-w / 2, w / 2]) { const a = P(0, yy[i], zs), b = P(dd[i], yy[i], zs); ctx.strokeStyle = rgba(tcol, 0.5); ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+    }
+    const spc = h / 10;
+    for (let y = S.ybot + spc / 2; y < S.ytop; y += spc) {
+      const w = S.t(y); const nz = Math.max(1, Math.round(w / spc));
+      for (let k = 0; k < nz; k++) {
+        const z = -w / 2 + w * (k + 0.5) / nz; const st = Eng.stress(S, f, y, z); if (st.tau < 1e-9) continue;
+        const L = st.tau / ref.tau * spc * 0.95; if (L < spc * 0.12) continue;
+        const uy = st.txy / st.tau, uz = st.txz / st.tau;
+        ar3([0.5, y - uy * L / 2, z - uz * L / 2], [0.5, y + uy * L / 2, z + uz * L / 2], tcol, 1.4, Math.min(7, 2 + L * sc * 0.25));
+      }
+    }
+    const t0 = Eng.stress(S, f, 0, 0).txy;
+    text('τ na LN = ' + fuL('s', Math.abs(t0)), [0, S.ybot - 0.14 * h, 0], tcol, 'center');
+    $('#modeNote').innerHTML = '<b>τ = V·Q/(I·t)</b>: as setas na face mostram a direção; a superfície fora da face mostra a intensidade |τ| ao longo da altura (parábola, nula nas fibras extremas, máxima na LN). Nos perfis I e T há um salto na ligação mesa/alma porque t muda. Roxo: τ positivo; verde: τ negativo (na face +x, V positivo gera τ para baixo, negativo).';
+  }
+  // ---- V e M na face ----
+  if ($('#showForces').checked) {
+    const zf = -(zm + 1.25 * h), r = 0.26 * h;
+    if (Math.abs(f.V) > 1e-9) { const dn = f.V > 0, s = dn ? 1 : -1; ar3([0, s * r * 1.4, zf], [0, -s * r * 1.4, zf], C.tauV, 2.4, 10); text('V = ' + fuL('F', Math.abs(f.V)), [0, s * (r * 1.4 + 0.1 * h), zf], C.tauV); }
+    if (Math.abs(f.M) > 1e-9) {
+      const zc = zf - 0.75 * h, pts = []; for (let i = 0; i <= 30; i++) { const th = (-70 + 320 * i / 30) * Math.PI / 180; pts.push(P(r * Math.cos(th), r * Math.sin(th), zc)); }
+      if (f.M < 0) pts.reverse();
+      ctx.strokeStyle = C.mdiag; ctx.fillStyle = C.mdiag; ctx.lineWidth = 2.2; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke(); arrowHead(ctx, pts[27][0], pts[27][1], pts[30][0], pts[30][1], 10);
+      text('M = ' + fuL('M', Math.abs(f.M)), [0, -r * 1.55, zc], C.mdiag);
+    }
+  }
+  const pp = P(0.5, pt.y, pt.z); ctx.fillStyle = C.panel; ctx.beginPath(); ctx.arc(pp[0], pp[1], 5, 0, 7); ctx.fill(); ctx.strokeStyle = C.cut; ctx.lineWidth = 2; ctx.stroke();
+  text('P', [0, pt.y + 0.08 * h, pt.z - 0.06 * h], C.cut, 'center', '600 13px "Barlow Condensed", sans-serif');
+  if (!faceVisible) text('gire a vista para ver a face do corte', [-Ls / 2, S.ytop + 0.3 * h, 0], C.muted);
+  const o = [40, H - 30]; ctx.lineWidth = 1.3; ctx.font = '600 12px "Barlow Condensed", sans-serif';
+  for (const [a, b, c, nm] of [[1, 0, 0, 'x'], [0, 1, 0, 'y'], [0, 0, 1, 'z']]) { const r = rot(a, b, c); ctx.strokeStyle = C.muted; ctx.fillStyle = C.muted; arrow(ctx, o[0], o[1], o[0] + r[0] * 22, o[1] - r[1] * 22, 5); ctx.textAlign = 'center'; ctx.fillText(nm, o[0] + r[0] * 32, o[1] - r[1] * 32); }
+  ctx.font = '500 12px "IBM Plex Mono", monospace'; ctx.textAlign = 'right'; ctx.fillStyle = C.cut; ctx.fillText(forceMode === 'manual' ? 'esforços informados' : 'corte em x = ' + fuL('L', xc), W - 10, 16);
+}
+// ---------- diagramas ----------
+const DIAG = { ml: 64, mr: 20 };
+function drawDiagrams() {
+  const el = $('#diagrams'); const W = Math.max(300, el.clientWidth); const L = model.L;
+  const { ml, mr } = DIAG; const X = x => ml + (W - ml - mr) * x / L;
+  const f = beamForcesAt(); const tan = $('#showTan').checked, flipM = $('#mTension').checked;
+  const panels = [{ k: 'load', h: 150 }, { k: 'V', h: 150, col: C.tauV, ttl: 'V (' + ul('F') + ')' }, { k: 'M', h: 150, col: C.mdiag, ttl: 'M (' + ul('M') + ')' }, { k: 'v', h: 160, col: C.defl, ttl: 'Deflexão v (' + ul('v') + ')' }];
+  let y0 = 0, out = '';
+  for (const p of panels) { p.y0 = y0; y0 += p.h; }
+  const Ht = y0 + 22;
+  // eixo x
+  out += `<line x1="${ml}" x2="${W - mr}" y1="${Ht - 18}" y2="${Ht - 18}" stroke="${C.line}"/>`;
+  const Ld = uo('L', L), step = niceStep(Ld / 8);
+  for (let xd = 0; xd <= Ld + 1e-9 * Ld; xd += step) { const x = uin('L', xd); out += `<line x1="${X(x)}" x2="${X(x)}" y1="${Ht - 21}" y2="${Ht - 15}" stroke="${C.muted}"/><text x="${X(x)}" y="${Ht - 3}" text-anchor="middle">${fmt(xd, step < 1 ? (step < 0.1 ? 2 : 1) : 0)}</text>`; }
+  out += `<text x="${W - mr}" y="${Ht - 26}" text-anchor="end">x (${ul('L')})</text>`;
+  for (const p of panels) {
+    out += `<line x1="0" x2="${W}" y1="${p.y0 + p.h - 0.5}" y2="${p.y0 + p.h - 0.5}" stroke="${C['line-soft']}"/>`;
+    if (p.k === 'load') { out += drawLoadPanel(p, X, W); continue; }
+    const cv = p.k === 'V' ? (a => uo('F', a)) : p.k === 'M' ? (a => uo('M', a)) : (a => uo('v', a * 1000)); const uk = p.k === 'V' ? 'F' : p.k === 'M' ? 'M' : 'v';
+    const vals = (p.k === 'v' ? dfl.v : res[p.k]).map(cv), xs = res.xs;
+    let mx = Math.max(0, ...vals), mn = Math.min(0, ...vals);
+    const tiny = 1e-9 + 1e-6 * Math.max(Math.abs(mx), Math.abs(mn));
+    const flat = mx - mn < 1e-9; if (flat) { mx = 1; mn = -1; }
+    const flip = p.k === 'M' && flipM;
+    const top = p.y0 + 42, ph = p.h - 56;
+    const Y = v => flip ? top + (v - mn) / (mx - mn) * ph : top + (mx - v) / (mx - mn) * ph;
+    let d = `M${X(xs[0])},${Y(0)}`; xs.forEach((x, i) => d += `L${X(x).toFixed(1)},${Y(vals[i]).toFixed(1)}`); d += `L${X(xs[xs.length - 1])},${Y(0)}Z`;
+    let ln = ''; xs.forEach((x, i) => ln += (i ? 'L' : 'M') + X(x).toFixed(1) + ',' + Y(vals[i]).toFixed(1));
+    out += `<path d="${d}" fill="${rgba(p.col, 0.16)}"/><path d="${ln}" fill="none" stroke="${p.col}" stroke-width="2"/>`;
+    out += `<line x1="${X(0)}" x2="${X(L)}" y1="${Y(0)}" y2="${Y(0)}" stroke="${C.ink}" stroke-width="1"/>`;
+    out += `<text class="ttl" x="8" y="${p.y0 + 16}">${p.ttl}</text>`;
+    if (p.k === 'v') { const dm = Math.max(-dfl.min, dfl.max) * 1000; out += `<text x="150" y="${p.y0 + 16}">|v|máx = ${fuL('v', dm)}${dm > 0 ? ' (L/' + fmt(model.L * 1000 / dm, 0) + ')' : ''} · E = ${fuL('E', model.E)}</text>`; }
+    if (p.k === 'M') out += `<text x="${W - mr}" y="${p.y0 + 16}" text-anchor="end">${flip ? '+ para baixo (lado tracionado)' : '+ para cima'}</text>`;
+    out += `<text x="${ml - 6}" y="${Y(0) + 4}" text-anchor="end">0</text>`;
+    if (!flat) {
+      const e0 = p.k === 'v' ? dfl : res.ext[p.k], e = { max: cv(e0.max), xmax: e0.xmax, min: cv(e0.min), xmin: e0.xmin };
+      const lab = (v, x) => { const yy = Y(v); const up = flip ? v < 0 : v > 0; const tx = Math.min(W - mr - 24, Math.max(ml + 24, X(x))); return `<circle cx="${X(x)}" cy="${yy}" r="2.5" fill="${p.col}"/><text x="${tx}" y="${up ? yy - 6 : yy + 13}" text-anchor="middle" style="fill:${p.col}">${nfs(v)}</text>`; };
+      if (e.max > tiny) out += lab(e.max, e.xmax);
+      if (e.min < -tiny) out += lab(e.min, e.xmin);
+    } else out += `<text x="${(ml + W - mr) / 2}" y="${Y(0) - 8}" text-anchor="middle">nulo</text>`;
+    // valor no corte
+    const dc = dfl.at(Math.min(model.L - Eng.EPS, Math.max(Eng.EPS, xc))); const v = cv(p.k === 'v' ? dc.v : f[p.k]), cx = X(xc), cyv = Y(flat ? 0 : v);
+    out += `<circle cx="${cx}" cy="${cyv}" r="4" fill="${C.cut}" stroke="${C.panel}" stroke-width="1.5"/>`;
+    const right = cx < W - 170;
+    out += `<text x="${cx + (right ? 8 : -8)}" y="${top - 6}" text-anchor="${right ? 'start' : 'end'}" style="fill:${C.cut};font-weight:500">${p.k} = ${nfs(v)} ${ul(uk)}</text>`;
+    if (tan && !flat) {
+      const slope = p.k === 'V' ? uo('F', -res.qAt(xc)) : p.k === 'M' ? uo('M', f.V) : uo('v', dc.th * 1000);
+      const k = (ph / (mx - mn)) / ((W - ml - mr) / L) * (flip ? 1 : -1);
+      const dx = 46, dy = slope * k * dx; const sc = Math.min(1, 60 / Math.max(1e-9, Math.abs(dy)));
+      out += `<line x1="${cx - dx * sc}" y1="${cyv - dy * sc}" x2="${cx + dx * sc}" y2="${cyv + dy * sc}" stroke="${C.cut}" stroke-width="1.6" stroke-dasharray="5 3"/>`;
+      const txt = p.k === 'V' ? `dV/dx = −q = ${fuL('q', -res.qAt(xc))}` : p.k === 'M' ? `dM/dx = V = ${fuL('F', f.V)}` : `dv/dx = θ = ${fmt(dc.th * 1000, 3)}·10⁻³ rad`;
+      out += `<text x="${cx + (right ? 8 : -8)}" y="${top + 8}" text-anchor="${right ? 'start' : 'end'}" style="fill:${C.cut}">${txt}</text>`;
+    }
+  }
+  out += `<line x1="${X(xc)}" x2="${X(xc)}" y1="4" y2="${Ht - 18}" stroke="${C.cut}" stroke-width="1.5"/>`;
+  el.innerHTML = `<svg width="${W}" height="${Ht}" viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Diagramas de esforços">${out}</svg>`;
+}
+function triSvg(x0, y0, x1, y1, col, s = 7) {
+  const a = Math.atan2(y1 - y0, x1 - x0);
+  const p = (da) => `${(x1 - s * Math.cos(a + da)).toFixed(1)},${(y1 - s * Math.sin(a + da)).toFixed(1)}`;
+  return `<polygon points="${x1.toFixed(1)},${y1.toFixed(1)} ${p(-0.42)} ${p(0.42)}" fill="${col}"/>`;
+}
+function niceStep(r) { const p = Math.pow(10, Math.floor(Math.log10(r))); const m = r / p; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; }
+
+function drawLoadPanel(p, X, W) {
+  const L = model.L, yb = p.y0 + 92; let o = `<text class="ttl" x="8" y="${p.y0 + 16}">Carregamento</text>`;
+  o += `<line x1="${X(0)}" x2="${X(L)}" y1="${yb}" y2="${yb}" stroke="${C.ink}" stroke-width="5" stroke-linecap="butt"/>`;
+  const sup = model.support, s = 10;
+  const tri = x => `<path d="M${X(x)},${yb + 3} l${-s},${s * 1.5} h${2 * s} Z" fill="${rgba(C.ink, 0.1)}" stroke="${C.ink}"/>`;
+  if (sup.type === 'simple') {
+    o += tri(sup.xA) + `<line x1="${X(sup.xA) - 14}" x2="${X(sup.xA) + 14}" y1="${yb + 3 + s * 1.5}" y2="${yb + 3 + s * 1.5}" stroke="${C.ink}"/>`;
+    o += tri(sup.xB) + `<line x1="${X(sup.xB) - 14}" x2="${X(sup.xB) + 14}" y1="${yb + 8 + s * 1.5}" y2="${yb + 8 + s * 1.5}" stroke="${C.ink}"/><circle cx="${X(sup.xB) - 5}" cy="${yb + 5.5 + s * 1.5}" r="2.4" fill="none" stroke="${C.ink}"/><circle cx="${X(sup.xB) + 5}" cy="${yb + 5.5 + s * 1.5}" r="2.4" fill="none" stroke="${C.ink}"/>`;
+  } else {
+    const xw = X(sup.type === 'cantL' ? 0 : L), d = sup.type === 'cantL' ? -1 : 1;
+    o += `<line x1="${xw}" x2="${xw}" y1="${yb - 20}" y2="${yb + 20}" stroke="${C.ink}" stroke-width="2"/>`;
+    for (let i = 0; i < 6; i++) o += `<line x1="${xw}" y1="${yb - 18 + i * 7.5}" x2="${xw + d * 7}" y2="${yb - 24 + i * 7.5}" stroke="${C.ink}"/>`;
+  }
+  const qmax = Math.max(1e-9, ...res.loads.filter(l => l.type === 'q').flatMap(l => [Math.abs(l.q1), Math.abs(l.q2)]));
+  const ah = (x, y, dir, col) => `<path d="M${x},${y} l-4,${-7 * dir} h8 Z" fill="${col}"/>`;
+  for (const l of res.loads) {
+    if (l.type === 'P') {
+      const dn = l.P > 0, y1 = dn ? yb - 4 : yb + 4, y0 = dn ? yb - 52 : yb + 52;
+      o += `<line x1="${X(l.x)}" x2="${X(l.x)}" y1="${y0}" y2="${y1}" stroke="${C.ink}" stroke-width="1.8"/>${ah(X(l.x), y1, dn ? 1 : -1, C.ink)}<text x="${X(l.x)}" y="${dn ? y0 - 5 : y0 + 13}" text-anchor="middle" style="fill:${C.ink}">${fuL('F', Math.abs(l.P))}</text>`;
+    } else if (l.type === 'q') {
+      const H = 34, n = Math.max(3, Math.round((l.b - l.a) / L * 22)); let pts = `${X(l.a)},${yb - 4}`;
+      for (let i = 0; i <= n; i++) { const x = l.a + (l.b - l.a) * i / n, q = l.q1 + (l.q2 - l.q1) * i / n; pts += ` ${X(x)},${yb - 4 - q / qmax * H}`; }
+      pts += ` ${X(l.b)},${yb - 4}`;
+      o += `<polygon points="${pts}" fill="${rgba(C.ink, 0.08)}" stroke="${C.ink}" stroke-width="1"/>`;
+      for (let i = 0; i <= n; i += Math.max(1, Math.round(n / 8))) { const x = l.a + (l.b - l.a) * i / n, q = l.q1 + (l.q2 - l.q1) * i / n; if (Math.abs(q) / qmax > 0.15) { const yt = yb - 4 - q / qmax * H, ye = yb - 4; o += `<line x1="${X(x)}" x2="${X(x)}" y1="${yt}" y2="${ye}" stroke="${C.ink}"/>${ah(X(x), q > 0 ? ye : ye - 0, q > 0 ? 1 : -1, C.ink)}`; } }
+      o += `<text x="${X((l.a + l.b) / 2)}" y="${yb - 10 - H}" text-anchor="middle" style="fill:${C.ink}">${l.q1 === l.q2 ? fu('q', l.q1) : fu('q', l.q1) + ' → ' + fu('q', l.q2)} ${ul('q')}</text>`;
+    } else if (l.type === 'C') {
+      const r = 16, cx = X(l.x), ccw = l.C > 0, pt2 = th => [cx + r * Math.cos(th), yb - r * Math.sin(th)];
+      let pl = ''; for (let i = 0; i <= 24; i++) { const q = pt2(-0.9 + 4.5 * i / 24); pl += (i ? 'L' : 'M') + q[0].toFixed(1) + ',' + q[1].toFixed(1); }
+      o += `<path d="${pl}" fill="none" stroke="${C.mdiag}" stroke-width="1.8"/>`;
+      const [a, b] = ccw ? [pt2(3.25), pt2(3.6)] : [pt2(-0.55), pt2(-0.9)];
+      o += triSvg(a[0], a[1], b[0], b[1], C.mdiag, 8);
+      o += `<text x="${cx}" y="${yb - r - 8}" text-anchor="middle" style="fill:${C.mdiag}">${fuL('M', Math.abs(l.C))}</text>`;
+    }
+  }
+  {
+    const txt = res.reac.filter(r => (r.type === 'P' && Math.abs(r.P) > 1e-9) || (r.type === 'C' && Math.abs(r.C) > 1e-9))
+      .map(r => r.type === 'P' ? `R${r.name} = ${fuL('F', -r.P)} ${-r.P >= 0 ? '↑' : '↓'}` : `M${r.name} = ${fuL('M', Math.abs(r.C))} ${r.C > 0 ? '↺' : '↻'}`).join('   ');
+    o += `<text x="${W - DIAG.mr}" y="${p.y0 + 16}" text-anchor="end" style="fill:${C.react}">Reações: ${txt || 'nulas'}</text>`;
+  }
+  return o;
+}
+// ---------- seção (escolha do ponto) + distribuição da tensão ativa ----------
+let secGeo = null;
+function drawSecView() {
+  const el = $('#secview'); const W = Math.max(280, el.clientWidth), H = 320; const f = forcesAt();
+  const top = 40, bot = H - 40, ph = bot - top, ws = W * 0.44;
+  const s = Math.min((ws - 40) / (2 * S.zmax), ph / S.h);
+  const cx = ws / 2 + 10, Y = y => bot - (y - S.ybot) * s, Xs = z => cx + z * s;
+  secGeo = { W, H, s, cx, bot, ybot: S.ybot };
+  let o = `<text class="ttl" x="4" y="16">Seção</text>`;
+  o += `<polygon points="${S.outer.map(([z, y]) => Xs(z).toFixed(1) + ',' + Y(y).toFixed(1)).join(' ')}" fill="${rgba(C.steel, 0.3)}" stroke="${C.ink}" stroke-width="1.5"/>`;
+  o += `<line x1="${Xs(-S.zmax) - 6}" x2="${W - 6}" y1="${Y(0)}" y2="${Y(0)}" stroke="${C.ink}" stroke-dasharray="5 4"/><text x="${Xs(-S.zmax) - 8}" y="${Y(0) + 4}" text-anchor="end" style="fill:${C.ink}">LN</text>`;
+  // cotas simples
+  o += `<text x="${cx}" y="${Y(S.ytop) - 8}" text-anchor="middle">${fuL('d', S.t(S.ytop - 1e-6))}</text>`;
+  o += `<text x="${Xs(S.zmax) + 6}" y="${(Y(S.ytop) + Y(S.ybot)) / 2 - 18}" style="writing-mode:initial">h = ${fuL('d', S.h)}</text>`;
+  // perfil
+  const px0 = ws + 18, pw = W - px0 - 10;
+  const ys = []; for (let i = 0; i <= 200; i++) ys.push(S.ybot + S.h * i / 200); S.rects.forEach(r => ys.push(r.y0 + 1e-6, r.y1 - 1e-6)); ys.sort((a, b) => a - b);
+  if (mode === 'sigma') {
+    const v = ys.map(y => -f.M * 1e6 * y / S.I), mx = Math.max(1e-9, ...v.map(Math.abs)), ax = px0 + pw / 2, X = val => ax + val / mx * (pw / 2 - 26);
+    o += `<text class="ttl" x="${px0}" y="16">σx(y) = −M·y/I</text><line x1="${ax}" x2="${ax}" y1="${top - 6}" y2="${bot + 6}" stroke="${C.ink}"/>`;
+    const side = sg => { let d = `M${ax},${Y(ys[0])}`; ys.forEach((y, i) => d += `L${X(sg > 0 ? Math.max(0, v[i]) : Math.min(0, v[i])).toFixed(1)},${Y(y).toFixed(1)}`); return d + `L${ax},${Y(ys[ys.length - 1])}Z`; };
+    o += `<path d="${side(1)}" fill="${rgba(C.ten, 0.25)}"/><path d="${side(-1)}" fill="${rgba(C.comp, 0.25)}"/>`;
+    o += `<line x1="${X(v[0])}" y1="${Y(ys[0])}" x2="${X(v[v.length - 1])}" y2="${Y(ys[ys.length - 1])}" stroke="${C.ink}" stroke-width="1.6"/>`;
+    const vt = v[v.length - 1], vb = v[0];
+    o += `<text x="${X(vt)}" y="${Y(S.ytop) - 8}" text-anchor="middle" style="fill:${vt >= 0 ? C.ten : C.comp}">${fu('s', vt)}</text><text x="${X(vb)}" y="${Y(S.ybot) + 16}" text-anchor="middle" style="fill:${vb >= 0 ? C.ten : C.comp}">${fu('s', vb)}</text>`;
+    const sp = -f.M * 1e6 * pt.y / S.I; o += `<circle cx="${X(sp)}" cy="${Y(pt.y)}" r="4" fill="${C.cut}"/>`;
+    o += `<text x="${px0}" y="${H - 8}">${ul('s')} · tração +</text>`;
+  } else {
+    const v = ys.map(y => Math.abs(Eng.stress(S, f, y, 0).txy)), mx = Math.max(1e-9, ...v), X = val => px0 + val / mx * (pw - 34);
+    o += `<text class="ttl" x="${px0}" y="16">|τ|(y) = V·Q/(I·t)</text><line x1="${px0}" x2="${px0}" y1="${top - 6}" y2="${bot + 6}" stroke="${C.ink}"/>`;
+    let d = `M${px0},${Y(ys[0])}`; ys.forEach((y, i) => d += `L${X(v[i]).toFixed(1)},${Y(y).toFixed(1)}`); d += `L${px0},${Y(ys[ys.length - 1])}Z`;
+    const tc = -f.V >= 0 ? C.tauV : C.tauN; o += `<path d="${d}" fill="${rgba(tc, 0.2)}" stroke="${tc}" stroke-width="1.8"/>`;
+    const t0 = Math.abs(Eng.stress(S, f, 0, 0).txy); o += `<text x="${X(t0) + 4}" y="${Y(0) - 6}" style="fill:${tc}">${fu('s', t0)}</text>`;
+    const stP = Eng.stress(S, f, pt.y, pt.z); o += `<circle cx="${X(Math.abs(stP.flange ? stP.txz : stP.txy))}" cy="${Y(pt.y)}" r="4" fill="${C.cut}"/>`;
+    o += `<text x="${px0}" y="${H - 8}">${ul('s')}, na alma (z = 0)</text>`;
+    if (S.type !== 'rect') o += `<text x="${px0}" y="${H - 22}">salto na ligação mesa/alma: t muda</text>`;
+  }
+  o += `<line x1="0" x2="${W}" y1="${Y(pt.y)}" y2="${Y(pt.y)}" stroke="${C.cut}" stroke-dasharray="2 3"/>`;
+  o += `<circle cx="${Xs(pt.z)}" cy="${Y(pt.y)}" r="5.5" fill="${C.panel}" stroke="${C.cut}" stroke-width="2"/><text x="${Xs(pt.z) + 8}" y="${Y(pt.y) - 8}" style="fill:${C.cut};font-weight:600">P</text>`;
+  o += `<text x="4" y="${H - 8}">y(P) = ${fuL('d', pt.y)}</text>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Seção e distribuição de tensão">${o}</svg>`;
+}
+function secPointFromEvent(e) {
+  if (!secGeo) return; const svg = $('#secview svg'); if (!svg) return; const r = svg.getBoundingClientRect();
+  const px = (e.clientX - r.left) * secGeo.W / r.width, py = (e.clientY - r.top) * secGeo.H / r.height;
+  let z = (px - secGeo.cx) / secGeo.s, y = secGeo.ybot + (secGeo.bot - py) / secGeo.s;
+  if (Math.abs(z) > S.zmax * 1.6) return;
+  if (!S.contains(y, z)) [y, z] = S.clamp(y, z); pt = { y, z }; cut();
+}
+
+// ---------- ponto P ----------
+function pointState() {
+  const f = forcesAt(), st = Eng.stress(S, f, pt.y, pt.z);
+  return { f, st, tau: st.flange ? st.txz : st.txy, plane: st.flange ? 'x–z' : 'x–y' };
+}
+function drawPoint() {
+  const { f, st, tau, plane } = pointState();
+  const r = (a, b, cls = '', k = false) => `<div class="r${k ? ' k' : ''}"><span>${a}</span><b class="${cls}">${b}</b></div>`;
+  let h = r(forceMode === 'manual' ? 'Esforços informados' : `Esforços em x = ${fuL('L', xc)}`, `V = ${fuL('F', f.V)} · M = ${fuL('M', f.M)}`);
+  h += r('Posição de P', `y = ${fuL('d', pt.y)} · z = ${fuL('d', pt.z)}`);
+  h += r(`σx = −M·y/I = −(${fuL('M', f.M)})·(${fuL('d', pt.y)}) / (${sciU('I', S.I)})`, fuL('s', st.sigma), st.sigma >= 0 ? 'sig' : 'sigc', true);
+  if (st.flange) h += r(`τxz = V·Q/(I·tf), Q da aba = ${sciU('Q', st.Qf)}, tf = ${fuL('d', S.rectAt(pt.y).h)}`, fuL('s', st.txz), 'tv', true);
+  else h += r(`τxy = V·Q/(I·t), Q = ${sciU('Q', st.Q)}, t = ${fuL('d', st.t)}`, fuL('s', st.txy), 'tv', true);
+  h += r(`σ na direção ${st.flange ? 'z' : 'y'}`, '0 (flexão simples)');
+  h += r('Sinal de τ', 'positivo: na face +x aponta para +' + (st.flange ? 'z' : 'y'));
+  h += r('Atenção às unidades', `M·y/I resulta em ${ul('M')}·${ul('d')}/${ul('I')}; o programa converte para ${ul('s')}`);
+  $('#formulas').innerHTML = h;
+  $('#elemP').innerHTML = elementSVG({ sx: uo('s', st.sigma), sy: 0, txy: uo('s', tau), ang: 0, xl: 'x', yl: st.flange ? 'z' : 'y', showRef: false });
+}
+// ---------- aba Círculo de Mohr ----------
+function mohrInputs() { return { sx: +$('#m_sx').value || 0, sy: +$('#m_sy').value || 0, txy: +$('#m_txy').value || 0, th: +$('#m_th').value || 0 }; }
+function drawMohrTab() {
+  const { sx, sy, txy, th } = mohrInputs();
+  const mo = Eng.mohr(sx, sy, txy), tr = Eng.transform(sx, sy, txy, th), sh = Eng.transform(sx, sy, txy, mo.ths);
+  $('#m_thv').textContent = fmt(th, 1) + '°';
+  const r = (a, b, cls = '', k = false) => `<div class="r${k ? ' k' : ''}"><span>${a}</span><b class="${cls}">${b}</b></div>`;
+  $('#m_res').innerHTML =
+    r('σméd = (σx + σy)/2', nfs(mo.c,) + ' ' + ul('s')) +
+    r('R = √[((σx − σy)/2)² + τxy²]', nfs(mo.R,) + ' ' + ul('s')) +
+    r('σ₁ = σméd + R', nfs(mo.s1,) + ' ' + ul('s'), 'sig', true) +
+    r('σ₂ = σméd − R', nfs(mo.s2,) + ' ' + ul('s'), 'sigc', true) +
+    r('θp (de x até σ₁), tan 2θp = 2τxy/(σx − σy)', fmt(mo.thp, 2) + '°  e  ' + fmt(mo.thp2, 2) + '°') +
+    r('τmáx no plano = R', nfs(mo.R,) + ' ' + ul('s'), 'tv', true) +
+    r('θs (τx′y′ = +τmáx)', fmt(mo.ths, 2) + '°') +
+    r(`Em θ = ${fmt(th, 1)}°: σx′`, nfs(tr.sx,) + ' ' + ul('s'), 'mono') +
+    r('σy′', nfs(tr.sy,) + ' ' + ul('s'), 'mono') +
+    r('τx′y′', nfs(tr.txy,) + ' ' + ul('s'), 'mono');
+  // círculo
+  const W = 640, H = 440, m = 56; let o = '';
+  const smin = Math.min(mo.s2, 0, sx, sy), smax = Math.max(mo.s1, 0, sx, sy), span = Math.max(smax - smin, 1e-9);
+  const R = Math.max(mo.R, 1e-9), s = Math.min((W - 2 * m) / span, (H - 2 * m) / (2 * R));
+  const ox = W / 2 - ((smin + smax) / 2) * s, cy = H / 2;
+  const X = v => ox + v * s, Y = t => cy + t * s; // τ positivo para baixo
+  const ink = C.ink, mut = C.muted;
+  o += arrowSvg(14, cy, W - 10, cy, mut, 1.2, 9) + `<text x="${W - 12}" y="${cy - 10}" text-anchor="end" class="mut">σ (${ul('s')})</text>`;
+  o += arrowSvg(X(0), 16, X(0), H - 8, mut, 1.2, 9) + `<text x="${X(0) + 8}" y="${H - 12}" class="mut">τ (${ul('s')})</text>`;
+  if (mo.R > 1e-9) {
+    o += `<circle cx="${X(mo.c)}" cy="${cy}" r="${mo.R * s}" fill="${rgba(C.cut, 0.05)}" stroke="${ink}" stroke-width="1.6"/>`;
+    const phiA = Math.atan2(txy, (sx - sy) / 2), pnt = phi => [X(mo.c + mo.R * Math.cos(phi)), Y(mo.R * Math.sin(phi))];
+    const arc = (p0, p1, rr, col) => { let d = ''; const n = 40; for (let i = 0; i <= n; i++) { const p = p0 + (p1 - p0) * i / n; d += (i ? 'L' : 'M') + (X(mo.c) + rr * Math.cos(p)).toFixed(1) + ',' + (cy + rr * Math.sin(p)).toFixed(1); } return `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.5"/>`; };
+    const A = [X(sx), Y(txy)], B = [X(sy), Y(-txy)];
+    o += `<line x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}" stroke="${ink}" stroke-width="1.2"/>`;
+    // 2θp: de CA até σ1 (ângulo 0)
+    const rr = Math.min(mo.R * s * 0.32, 60);
+    if (Math.abs(phiA) > 1e-3) { o += arc(phiA, 0, rr, mut); o += `<text x="${X(mo.c) + (rr + 14) * Math.cos(phiA / 2)}" y="${cy + (rr + 14) * Math.sin(phiA / 2) + 4}" text-anchor="middle" class="mut">2θp</text>`; }
+    // ponto P'(θ): φ = φA − 2θ
+    const phiP = phiA - 2 * th * Math.PI / 180, Pp = pnt(phiP);
+    o += `<line x1="${X(mo.c)}" y1="${cy}" x2="${Pp[0]}" y2="${Pp[1]}" stroke="${C.cut}" stroke-width="2"/>`;
+    if (Math.abs(th) > 0.2) { const r2 = rr * 1.45; o += arc(phiA, phiP, r2, C.cut); const pm = (phiA + phiP) / 2; o += `<text x="${X(mo.c) + (r2 + 16) * Math.cos(pm)}" y="${cy + (r2 + 16) * Math.sin(pm) + 4}" text-anchor="middle" style="fill:${C.cut}">2θ = ${fmt(2 * th, 1)}°</text>`; }
+    o += `<line x1="${Pp[0]}" y1="${Pp[1]}" x2="${Pp[0]}" y2="${cy}" stroke="${C.cut}" stroke-dasharray="3 3"/>`;
+    o += `<circle cx="${Pp[0]}" cy="${Pp[1]}" r="5.5" fill="${C.cut}"/>`;
+    const right = Pp[0] > X(mo.c); o += `<text x="${Pp[0] + (right ? 9 : -9)}" y="${Pp[1] + (Pp[1] > cy ? 18 : -10)}" text-anchor="${right ? 'start' : 'end'}" style="fill:${C.cut}">P (${nfs(tr.sx,)}; ${nfs(tr.txy,)})</text>`;
+    // A e B
+    o += `<circle cx="${A[0]}" cy="${A[1]}" r="5.5" fill="${ink}"/><text x="${A[0] + (sx >= mo.c ? 9 : -9)}" y="${A[1] + (txy >= 0 ? 18 : -10)}" text-anchor="${sx >= mo.c ? 'start' : 'end'}">A (${nfs(sx,)}; ${nfs(txy,)})</text>`;
+    o += `<circle cx="${B[0]}" cy="${B[1]}" r="4" fill="${C.panel}" stroke="${ink}" stroke-width="1.5"/><text x="${B[0] + (sy >= mo.c ? 9 : -9)}" y="${B[1] + (-txy >= 0 ? 18 : -10)}" text-anchor="${sy >= mo.c ? 'start' : 'end'}" class="mut">B (${nfs(sy,)}; ${nfs(-txy,)})</text>`;
+    // centro, principais, τmax
+    o += `<circle cx="${X(mo.c)}" cy="${cy}" r="3.5" fill="${ink}"/><text x="${X(mo.c)}" y="${cy + 18}" text-anchor="middle">C ${nfs(mo.c,)}</text>`;
+    o += `<circle cx="${X(mo.s1)}" cy="${cy}" r="5" fill="${C.ten}"/><text x="${X(mo.s1) + 8}" y="${cy - 8}" style="fill:${C.ten}">σ₁ = ${nfs(mo.s1,)}</text>`;
+    o += `<circle cx="${X(mo.s2)}" cy="${cy}" r="5" fill="${C.comp}"/><text x="${X(mo.s2) - 8}" y="${cy - 8}" text-anchor="end" style="fill:${C.comp}">σ₂ = ${nfs(mo.s2,)}</text>`;
+    o += `<circle cx="${X(mo.c)}" cy="${Y(mo.R)}" r="3" fill="${C.tauV}"/><text x="${X(mo.c)}" y="${Y(-mo.R) - 10}" text-anchor="middle" style="fill:${C.tauV}">τmáx = R = ${nfs(mo.R,)}</text>`;
+    o += `<circle cx="${X(mo.c)}" cy="${Y(-mo.R)}" r="3" fill="${C.tauV}"/>`;
+  } else o += `<text x="${W / 2}" y="${cy - 14}" text-anchor="middle">Estado hidrostático: o círculo é um ponto (σ = ${nfs(sx)} ${ul('s')} em qualquer direção)</text>`;
+  $('#mohrBig').innerHTML = o;
+  // elementos
+  $('#e_orig').innerHTML = elementSVG({ sx, sy, txy, ang: 0 });
+  $('#e_rot').innerHTML = elementSVG({ sx: tr.sx, sy: tr.sy, txy: tr.txy, ang: th, xl: 'x′', yl: 'y′' });
+  $('#e_pr').innerHTML = elementSVG({ sx: mo.s1, sy: mo.s2, txy: 0, ang: mo.thp, xl: 'x′ (σ₁)', yl: 'σ₂' });
+  $('#e_sh').innerHTML = elementSVG({ sx: sh.sx, sy: sh.sy, txy: sh.txy, ang: mo.ths, xl: 'x′', yl: 'y′' });
+  $('#cap_rot').textContent = `Rotacionado θ = ${fmt(th, 1)}°`;
+  $('#cap_pr').textContent = `Principais, θp = ${fmt(mo.thp, 1)}°`;
+  $('#cap_sh').textContent = `τmáx no plano, θs = ${fmt(mo.ths, 1)}°`;
+}
+// ---------- orquestração ----------
+let raf = 0, needFull = false, tab = 'viga';
+function full() { needFull = true; schedule(); }
+function cut() { schedule(); }
+function schedule() { if (!raf) raf = requestAnimationFrame(render); }
+function render() {
+  raf = 0;
+  try {
+    if (tab === 'mohr') { drawMohrTab(); return; }
+    if (needFull) { compute(); updateProps(); needFull = false; }
+    xc = Math.min(model.L, Math.max(0, xc));
+    $('#xcut').value = Math.round(xc / model.L * 1000);
+    $('#xval').textContent = 'x = ' + fuL('L', xc);
+    const f = beamForcesAt();
+    $('#chips').innerHTML = `<span class="chip v"><i>V</i>${fuL('F', f.V)}</span><span class="chip m"><i>M</i>${fuL('M', f.M)}</span><span class="chip d"><i>v</i>${fuL('v', dfl.at(Math.min(model.L - Eng.EPS, Math.max(Eng.EPS, xc))).v * 1000)}</span>`;
+    $('#fmNote').textContent = forceMode === 'manual' ? 'O 3D, a distribuição e o elemento usam os valores digitados. Os diagramas continuam mostrando a viga.' : `Usando V e M do corte em x = ${fuL('L', xc)}.`;
+    drawDiagrams(); draw3D(); drawSecView(); drawPoint();
+  } catch (e) { console.error(e); }
+}
+function setTab(t) {
+  tab = t; $$('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  $('#tab-viga').hidden = t !== 'viga'; $('#tab-mohr').hidden = t !== 'mohr';
+  if (t === 'viga' && needFull === false && !res) needFull = true;
+  schedule();
+}
+function bind() {
+  $$('[data-tab]').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+  $('#preset').innerHTML = PRESETS.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
+  $('#preset').addEventListener('change', e => loadPreset(+e.target.value));
+  $('#L').addEventListener('input', e => { const v = uin('L', +e.target.value); if (v > 0.1) { const old = model.L; model.L = v; if (model.support.type === 'simple' && Math.abs(model.support.xB - old) < 1e-9) { model.support.xB = v; $('#xB').value = inVal('L', v); } xc = Math.min(xc, v); full(); } });
+  $('#supType').addEventListener('change', e => { model.support.type = e.target.value; if (e.target.value === 'simple') { model.support.xA = uin('L', +$('#xA').value || 0); model.support.xB = uin('L', +$('#xB').value) || model.L; } full(); });
+  $('#E').addEventListener('input', e => { const v = uin('E', +e.target.value); if (v > 0) { model.E = v; full(); } });
+  $('#xA').addEventListener('input', e => { model.support.xA = uin('L', +e.target.value); full(); });
+  $('#xB').addEventListener('input', e => { model.support.xB = uin('L', +e.target.value); full(); });
+  $$('#secSeg button').forEach(b => b.addEventListener('click', () => { const t = b.dataset.sec; model.section = { type: t, ...SEC_DEF[t] }; renderSecParams(); resetPoint = true; full(); }));
+  $('#secParams').addEventListener('input', e => { const k = e.target.dataset.sec; if (k) { model.section[k] = uin('d', +e.target.value); full(); } });
+  $('#loads').addEventListener('input', e => { const k = e.target.dataset.k; if (!k) return; const id = +e.target.closest('.load').dataset.id; const l = model.loads.find(l => l.id === id); if (l) { l[k] = e.target.value === '' ? 0 : uin(e.target.dataset.uk, +e.target.value); full(); } });
+  $('#loads').addEventListener('click', e => { const id = e.target.dataset.del; if (id) { model.loads = model.loads.filter(l => l.id !== +id); renderLoads(); full(); } });
+  $$('[data-add]').forEach(b => b.addEventListener('click', () => newLoad(b.dataset.add)));
+  $('#xcut').addEventListener('input', e => { xc = +e.target.value / 1000 * model.L; cut(); });
+  $$('#modeSeg button').forEach(b => b.addEventListener('click', () => { mode = b.dataset.mode; $$('#modeSeg button').forEach(x => x.classList.toggle('on', x === b)); cut(); }));
+  ['#globalScale', '#showTan', '#mTension', '#showForces'].forEach(s => $(s).addEventListener('change', cut));
+  const home = { yaw: -1.05, pitch: 0.32, zoom: 1 };
+  $('#resetCam').addEventListener('click', () => { Object.assign(cam, home); cut(); });
+  const cv = $('#c3d'); let drag = null;
+  cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, yaw: cam.yaw, pitch: cam.pitch }; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => { if (!drag) return; cam.yaw = drag.yaw + (e.clientX - drag.x) * 0.008; cam.pitch = Math.max(-1.45, Math.min(1.45, drag.pitch + (e.clientY - drag.y) * 0.008)); cut(); });
+  cv.addEventListener('pointerup', () => drag = null); cv.addEventListener('pointercancel', () => drag = null);
+  cv.addEventListener('wheel', e => { e.preventDefault(); cam.zoom = Math.max(0.4, Math.min(6, cam.zoom * Math.exp(-e.deltaY * 0.0012))); cut(); }, { passive: false });
+  cv.addEventListener('dblclick', () => { Object.assign(cam, home); cut(); });
+  const dg = $('#diagrams'); let dd = false;
+  const setX = e => { const r = dg.getBoundingClientRect(); const x = (e.clientX - r.left - DIAG.ml) / (r.width - DIAG.ml - DIAG.mr) * model.L; xc = Math.min(model.L, Math.max(0, x)); cut(); };
+  dg.addEventListener('pointerdown', e => { dd = true; setX(e); });
+  window.addEventListener('pointermove', e => { if (dd) setX(e); });
+  window.addEventListener('pointerup', () => dd = false);
+  const sv = $('#secview'); let sd = false;
+  sv.addEventListener('pointerdown', e => { sd = true; secPointFromEvent(e); });
+  window.addEventListener('pointermove', e => { if (sd) secPointFromEvent(e); });
+  window.addEventListener('pointerup', () => sd = false);
+  $('#toMohr').addEventListener('click', () => {
+    const { st, tau, plane } = pointState();
+    $('#m_sx').value = inVal('s', st.sigma); $('#m_sy').value = 0; $('#m_txy').value = inVal('s', tau); $('#m_th').value = 0;
+    $('#m_src').textContent = forceMode === 'manual' ? `Valores do ponto P com os esforços informados (y = ${fuL('d', pt.y)}, plano ${plane}).` : `Valores do ponto P da viga (x = ${fuL('L', xc)}, y = ${fuL('d', pt.y)}, plano ${plane}).`;
+    setTab('mohr');
+  });
+  ['#m_sx', '#m_sy', '#m_txy', '#m_th'].forEach(s => $(s).addEventListener('input', () => { if (s !== '#m_th') $('#m_src').textContent = ''; cut(); }));
+  $('#m_toP').addEventListener('click', () => { const { sx, sy, txy } = mohrInputs(); $('#m_th').value = Eng.mohr(sx, sy, txy).thp.toFixed(1); cut(); });
+  $('#m_toS').addEventListener('click', () => { const { sx, sy, txy } = mohrInputs(); $('#m_th').value = Eng.mohr(sx, sy, txy).ths.toFixed(1); cut(); });
+  $('#m_to0').addEventListener('click', () => { $('#m_th').value = 0; cut(); });
+  // unidades
+  ['L', 'd', 'F'].forEach(k => $('#u_' + k).addEventListener('change', e => {
+    const s0 = UF.s(); unit[k] = e.target.value; const r = s0 / UF.s();
+    ['#m_sx', '#m_sy', '#m_txy'].forEach(id => { $(id).value = +(+$(id).value * r).toPrecision(6); });
+    refreshUnitLabels(); syncInputs(); renderLoads(); syncManual(); full();
+  }));
+  // esforços informados
+  $$('#fmSeg button').forEach(b => b.addEventListener('click', () => {
+    forceMode = b.dataset.fm; $$('#fmSeg button').forEach(x => x.classList.toggle('on', x === b));
+    $('#fmV').hidden = $('#fmM').hidden = forceMode !== 'manual';
+    if (forceMode === 'manual') { const f = beamForcesAt(); manF = { V: f.V, M: f.M }; syncManual(); }
+    cut();
+  }));
+  $('#manV').addEventListener('input', e => { manF.V = uin('F', +e.target.value || 0); cut(); });
+  $('#manM').addEventListener('input', e => { manF.M = uin('M', +e.target.value || 0); cut(); });
+  const retheme = () => { readColors(); cut(); };
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retheme);
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  new ResizeObserver(() => cut()).observe(document.body);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => cut());
+  if (location.hash === '#mohr') setTab('mohr');
+}
+function syncManual() { $('#manV').value = inVal('F', manF.V); $('#manM').value = inVal('M', manF.M); }
+readColors(); bind(); refreshUnitLabels();
+['#m_sx', '#m_sy', '#m_txy'].forEach((id, i) => { $(id).value = inVal('s', [-20, 90, 60][i]); });
+loadPreset(0);
+</script></body></html>
